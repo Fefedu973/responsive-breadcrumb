@@ -1,16 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, Home, MoreHorizontal } from "lucide-react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/components/ui/use-media-query";
 import { cn } from "@/lib/utils";
 import { BreadcrumbRenderer } from "./BreadcrumbRenderer";
@@ -26,6 +16,7 @@ import type {
   LayoutNode,
   ResponsiveBreadcrumbProps,
   ResponsiveBreadcrumbStrings,
+  SeparatorNavItem,
 } from "./types";
 import { useBreadcrumbMeasurements } from "./useBreadcrumbMeasurements";
 
@@ -92,7 +83,7 @@ export function ResponsiveBreadcrumb({
   alwaysShow,
 }: ResponsiveBreadcrumbProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const measureRef = React.useRef<HTMLOListElement | null>(null);
+  const measureRef = React.useRef<HTMLDivElement | null>(null);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [openOverlay, setOpenOverlay] = React.useState<string | null>(null);
   const [detectedDirection, setDetectedDirection] = React.useState<"ltr" | "rtl">(
@@ -484,9 +475,10 @@ export function ResponsiveBreadcrumb({
         renderItem={renderItem}
         renderEllipsis={renderEllipsis}
         renderTitleOnly={renderTitleOnly}
+        isMobile={isMobile}
         showHomeIcon={showHomeIcon}
         showNextArrow={showNextArrow}
-        nextItemsCount={nextItems.length}
+        nextItems={nextItems}
         separatorNavItems={separatorNavItems}
         separatorNavSide={separatorNavSide}
         showCurrentInNav={showCurrentInNav}
@@ -514,17 +506,20 @@ export type {
   SeparatorNavItem,
 } from "./types";
 
+const noopOpenOverlayChange = () => undefined;
+
 const MeasurementTree = React.forwardRef<
-  HTMLOListElement,
+  HTMLDivElement,
   {
     items: BreadcrumbData[];
     renderSeparator?: ResponsiveBreadcrumbProps["renderSeparator"];
     renderItem?: ResponsiveBreadcrumbProps["renderItem"];
     renderEllipsis?: ResponsiveBreadcrumbProps["renderEllipsis"];
     renderTitleOnly?: ResponsiveBreadcrumbProps["renderTitleOnly"];
+    isMobile: boolean;
     showHomeIcon: boolean;
     showNextArrow: boolean;
-    nextItemsCount: number;
+    nextItems: SeparatorNavItem[];
     separatorNavItems: NonNullable<ResponsiveBreadcrumbProps["separatorNavItems"]>;
     separatorNavSide: NonNullable<ResponsiveBreadcrumbProps["separatorNavSide"]>;
     showCurrentInNav: NonNullable<ResponsiveBreadcrumbProps["showCurrentInNav"]>;
@@ -543,9 +538,10 @@ const MeasurementTree = React.forwardRef<
     renderItem,
     renderEllipsis,
     renderTitleOnly,
+    isMobile,
     showHomeIcon,
     showNextArrow,
-    nextItemsCount,
+    nextItems,
     separatorNavItems,
     separatorNavSide,
     showCurrentInNav,
@@ -559,262 +555,84 @@ const MeasurementTree = React.forwardRef<
   },
   ref,
 ) {
-  const lastItem = items.at(-1);
-  const ellipsisItems = items.slice(1, Math.max(1, items.length - 1));
+  const includeNextArrow = showNextArrow && nextItems.length > 0;
+  const fullMeasurementLayout = buildFullLayout({
+    items,
+    itemWidths: Array.from({ length: items.length }, () => 0),
+    separatorWidths: Array.from(
+      { length: Math.max(0, items.length - 1) },
+      () => 0,
+    ),
+    includeNextArrow,
+    nextArrowWidth: 0,
+  });
+  const ellipsisMeasurementLayout = [
+    getEllipsisMeasurementNode(items.length),
+  ];
+  const titleOnlyMeasurementLayout = titleOnlyLayout(0);
+  const sharedRendererProps = {
+    items,
+    isMobile,
+    openOverlay: null,
+    onOpenOverlayChange: noopOpenOverlayChange,
+    renderSeparator,
+    renderItem,
+    renderEllipsis,
+    renderTitleOnly,
+    showHomeIcon,
+    showNextArrow,
+    nextItems,
+    separatorNavItems,
+    onItemClick: undefined,
+    titleOnlyFallback,
+    titleOnlyIcon,
+    titleOnlyCustomElement,
+    customEllipsisElement,
+    lastItemClickable: false,
+    showCollapsedCount,
+    strings,
+    clickableLeftOfEllipsis: true,
+    separatorNavSide,
+    overflowBehavior: "collapse" as const,
+    truncatedWidths: {},
+    showTooltipOnTruncate: false,
+    schema: "none" as const,
+    showCurrentInNav,
+    debug: false,
+    isRtl,
+  } satisfies Omit<
+    React.ComponentProps<typeof BreadcrumbRenderer>,
+    "layout" | "mode" | "measurementScope"
+  >;
 
   return (
     <div
+      ref={ref}
       aria-hidden="true"
       className="pointer-events-none absolute left-0 top-0 -z-10 h-0 max-w-none overflow-hidden opacity-0"
       style={{ contain: "layout style", visibility: "hidden" }}
     >
-      <Breadcrumb dir={isRtl ? "rtl" : "ltr"}>
-        <BreadcrumbList ref={ref} className="!flex-nowrap whitespace-nowrap">
-          {items.map((item, index) => (
-            <React.Fragment key={item.key}>
-              <BreadcrumbItem
-                data-measure-item={index}
-                className="min-w-0 max-w-full"
-              >
-                {index === items.length - 1 ? (
-                  <BreadcrumbPage className="inline-flex min-w-0 max-w-none items-center gap-1.5 whitespace-nowrap">
-                    {renderItem?.({
-                      item,
-                      index,
-                      mode: "measure",
-                      current: true,
-                    }) ?? (
-                      <MeasurementItemContent
-                        item={item}
-                        showHomeIcon={showHomeIcon && index === 0}
-                      />
-                    )}
-                  </BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink className="inline-flex min-w-0 max-w-none items-center gap-1.5 whitespace-nowrap">
-                    {renderItem?.({
-                      item,
-                      index,
-                      mode: "measure",
-                      current: false,
-                    }) ?? (
-                      <MeasurementItemContent
-                        item={item}
-                        showHomeIcon={showHomeIcon && index === 0}
-                      />
-                    )}
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-              {index < items.length - 1
-                ? renderMeasuredSeparator({
-                    index,
-                    previousKey: item.key,
-                    nextKey: items[index + 1]?.key ?? "",
-                    previousItem: item,
-                    nextItem: items[index + 1],
-                    renderSeparator,
-                    separatorNavItems,
-                    separatorNavSide,
-                    showCurrentInNav,
-                    strings,
-                  })
-                : null}
-            </React.Fragment>
-          ))}
-          <BreadcrumbItem data-measure-ellipsis="">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="size-8 px-0"
-              tabIndex={-1}
-              aria-label={resolveLabel(strings.measureEllipsis)}
-            >
-              {renderEllipsis?.({
-                hiddenItems: ellipsisItems,
-                mode: "measure",
-              }) ??
-                customEllipsisElement ?? (
-                  <span className="inline-flex items-center gap-1">
-                    <MoreHorizontal className="size-4" aria-hidden />
-                    {showCollapsedCount ? (
-                      <span className="text-[10px]">{ellipsisItems.length}</span>
-                    ) : null}
-                  </span>
-                )}
-            </Button>
-          </BreadcrumbItem>
-          {showNextArrow && nextItemsCount > 0 ? (
-            <BreadcrumbItem data-measure-next="">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="size-8 px-0"
-                tabIndex={-1}
-                aria-label={resolveLabel(strings.measureNextItems)}
-              >
-                <ChevronRight className="size-4" aria-hidden />
-              </Button>
-            </BreadcrumbItem>
-          ) : null}
-          <BreadcrumbItem data-measure-title-only="" className="min-w-0">
-            <BreadcrumbPage className="inline-flex min-w-0 max-w-none items-center gap-1.5 whitespace-nowrap">
-              {renderTitleOnly?.({
-                item: lastItem,
-                fallback: titleOnlyFallback,
-                mode: "measure",
-              }) ?? (
-                <>
-                  {titleOnlyCustomElement ?? titleOnlyIcon}
-                  <span className="min-w-0 truncate">{titleOnlyFallback}</span>
-                </>
-              )}
-            </BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <BreadcrumbRenderer
+        {...sharedRendererProps}
+        mode="measure"
+        layout={fullMeasurementLayout}
+        measurementScope="full"
+      />
+      <BreadcrumbRenderer
+        {...sharedRendererProps}
+        mode="measure"
+        layout={ellipsisMeasurementLayout}
+        measurementScope="ellipsis"
+      />
+      <BreadcrumbRenderer
+        {...sharedRendererProps}
+        mode="measure"
+        layout={titleOnlyMeasurementLayout}
+        measurementScope="title-only"
+      />
     </div>
   );
 });
-
-function MeasurementItemContent({
-  item,
-  showHomeIcon,
-}: {
-  item: BreadcrumbData;
-  showHomeIcon: boolean;
-}) {
-  if (item.measureElement) {
-    return <>{item.measureElement}</>;
-  }
-
-  if (item.customElement) {
-    return <>{item.customElement}</>;
-  }
-
-  return (
-    <>
-      {showHomeIcon ? <Home className="size-4 shrink-0" aria-hidden /> : null}
-      {item.icon}
-      <span className="min-w-0 truncate">{item.label}</span>
-    </>
-  );
-}
-
-function renderMeasuredSeparator({
-  index,
-  previousKey,
-  nextKey,
-  previousItem,
-  nextItem,
-  renderSeparator,
-  separatorNavItems,
-  separatorNavSide,
-  showCurrentInNav,
-  strings,
-}: {
-  index: number;
-  previousKey: string;
-  nextKey: string;
-  previousItem: BreadcrumbData | undefined;
-  nextItem: BreadcrumbData | undefined;
-  renderSeparator?: ResponsiveBreadcrumbProps["renderSeparator"];
-  separatorNavItems: NonNullable<ResponsiveBreadcrumbProps["separatorNavItems"]>;
-  separatorNavSide: NonNullable<ResponsiveBreadcrumbProps["separatorNavSide"]>;
-  showCurrentInNav: NonNullable<ResponsiveBreadcrumbProps["showCurrentInNav"]>;
-  strings: ResponsiveBreadcrumbStrings;
-}) {
-  const navItems = getMeasuredSeparatorNavItems({
-    separatorNavItems,
-    previousItem,
-    nextItem,
-    separatorNavSide,
-    showCurrentInNav,
-  });
-
-  if (navItems.length > 0) {
-    const anchorItem = separatorNavSide === "left" ? previousItem : nextItem;
-    const anchorLabel = primitiveLabel(anchorItem?.label) || anchorItem?.key || "";
-
-    return (
-      <BreadcrumbItem data-measure-separator={index}>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="size-7 text-muted-foreground"
-          tabIndex={-1}
-          aria-label={resolveLabel(strings.showSiblingItems, anchorLabel)}
-        >
-          <ChevronRight className="size-4" aria-hidden />
-        </Button>
-      </BreadcrumbItem>
-    );
-  }
-
-  const rendered = renderSeparator?.(previousKey, nextKey);
-
-  if (React.isValidElement<{ className?: string }>(rendered)) {
-    return React.cloneElement(rendered, {
-      "data-measure-separator": index,
-      className: cn(rendered.props.className),
-    } as React.HTMLAttributes<HTMLElement>);
-  }
-
-  return (
-    <BreadcrumbSeparator data-measure-separator={index}>
-      {rendered}
-    </BreadcrumbSeparator>
-  );
-}
-
-function getMeasuredSeparatorNavItems({
-  separatorNavItems,
-  previousItem,
-  nextItem,
-  separatorNavSide,
-  showCurrentInNav,
-}: {
-  separatorNavItems: NonNullable<ResponsiveBreadcrumbProps["separatorNavItems"]>;
-  previousItem: BreadcrumbData | undefined;
-  nextItem: BreadcrumbData | undefined;
-  separatorNavSide: NonNullable<ResponsiveBreadcrumbProps["separatorNavSide"]>;
-  showCurrentInNav: NonNullable<ResponsiveBreadcrumbProps["showCurrentInNav"]>;
-}) {
-  const anchorItem = separatorNavSide === "left" ? previousItem : nextItem;
-
-  if (!anchorItem) {
-    return [];
-  }
-
-  const baseItems =
-    separatorNavItems[anchorItem.key] ??
-    (previousItem && nextItem
-      ? separatorNavItems[`${previousItem.key}:${nextItem.key}`]
-      : undefined) ??
-    [];
-  const shouldIncludeAnchor =
-    showCurrentInNav === "always" ||
-    (showCurrentInNav === "with-others" && baseItems.length > 0);
-
-  if (!shouldIncludeAnchor || baseItems.some((item) => item.key === anchorItem.key)) {
-    return baseItems;
-  }
-
-  return [
-    {
-      key: anchorItem.key,
-      label: anchorItem.label,
-      href: anchorItem.href,
-      icon: anchorItem.icon,
-      clickable: anchorItem.clickable,
-      disabled: anchorItem.disabled,
-    },
-    ...baseItems,
-  ];
-}
 
 function buildFullLayout({
   items,
@@ -943,6 +761,14 @@ function titleOnlyLayout(width: number): LayoutNode[] {
   return [{ type: "title-only", width }];
 }
 
+function getEllipsisMeasurementNode(count: number): LayoutNode {
+  if (count > 2) {
+    return { type: "ellipsis", from: 1, to: count - 2, width: 0 };
+  }
+
+  return { type: "ellipsis", from: 0, to: Math.max(0, count - 1), width: 0 };
+}
+
 function getCanCollapse(item: BreadcrumbData, index: number, count: number) {
   if (item.canCollapse !== undefined) {
     return item.canCollapse;
@@ -969,13 +795,4 @@ function primitiveLabel(label: React.ReactNode) {
   }
 
   return "";
-}
-
-function resolveLabel<TArgs extends unknown[]>(
-  label: ResponsiveBreadcrumbStrings[keyof ResponsiveBreadcrumbStrings],
-  ...args: TArgs
-) {
-  return typeof label === "function"
-    ? (label as (...args: TArgs) => string)(...args)
-    : label;
 }

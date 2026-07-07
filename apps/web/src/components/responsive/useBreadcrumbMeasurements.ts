@@ -47,7 +47,10 @@ export function useBreadcrumbMeasurements({
     const nextArrowWidth = readSingleWidth(measureRoot, "measureNext");
     const titleOnlyWidth = readSingleWidth(measureRoot, "measureTitleOnly");
     const containerWidth = container.getBoundingClientRect().width;
-    const gap = readFlexGap(measureRoot);
+    const gapSource =
+      measureRoot.querySelector<HTMLElement>('[data-measure-list="full"]') ??
+      measureRoot;
+    const gap = readFlexGap(gapSource);
     const signature = [
       round(containerWidth),
       itemWidths.map(round).join(","),

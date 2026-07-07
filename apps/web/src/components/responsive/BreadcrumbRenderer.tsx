@@ -76,6 +76,7 @@ export interface BreadcrumbRendererProps {
   showCurrentInNav: "never" | "with-others" | "always";
   debug: boolean;
   isRtl: boolean;
+  measurementScope?: "full" | "ellipsis" | "title-only";
 }
 
 export function BreadcrumbRenderer({
@@ -111,6 +112,7 @@ export function BreadcrumbRenderer({
   showCurrentInNav,
   debug,
   isRtl,
+  measurementScope,
 }: BreadcrumbRendererProps) {
   const isMeasure = mode === "measure";
   const titleOnlyNode = layout.find((node) => node.type === "title-only");
@@ -169,6 +171,9 @@ export function BreadcrumbRenderer({
               itemType: "https://schema.org/BreadcrumbList",
             }
           : {})}
+        data-measure-list={
+          isMeasure && measurementScope === "full" ? "full" : undefined
+        }
       >
         {layout.map((node, nodeIndex) => {
           if (node.type === "item") {
@@ -467,7 +472,6 @@ function RenderedSeparator({
     showCurrentInNav,
   });
   const interactive =
-    !isMeasure &&
     navItems.length > 0 &&
     (!leftOfEllipsis || clickableLeftOfEllipsis);
 
@@ -490,6 +494,7 @@ function RenderedSeparator({
 
   return (
     <BreadcrumbItem
+      data-measure-separator={isMeasure ? node.after : undefined}
       data-slot="breadcrumb-interactive-separator"
       className={cn(debug && "outline outline-1 outline-cyan-500/60")}
     >
@@ -504,6 +509,7 @@ function RenderedSeparator({
             variant="ghost"
             size="icon-sm"
             className="group size-7 text-muted-foreground"
+            tabIndex={isMeasure ? -1 : undefined}
             aria-label={label}
           >
             <ChevronRight
@@ -564,28 +570,9 @@ function RenderedEllipsis({
     customEllipsisElement ??
     defaultEllipsisContent(hiddenItems.length, showCollapsedCount);
 
-  if (isMeasure) {
-    return (
-      <BreadcrumbItem
-        data-measure-ellipsis=""
-        className={cn(debug && "outline outline-1 outline-yellow-500/70")}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="size-8 px-0"
-          aria-label={label}
-          tabIndex={-1}
-        >
-          {content}
-        </Button>
-      </BreadcrumbItem>
-    );
-  }
-
   return (
     <BreadcrumbItem
+      data-measure-ellipsis={isMeasure ? "" : undefined}
       className={cn(debug && "outline outline-1 outline-yellow-500/70")}
     >
       <ResponsiveOverlay
@@ -600,6 +587,7 @@ function RenderedEllipsis({
             size="icon-sm"
             className="size-8 px-0"
             aria-label={label}
+            tabIndex={isMeasure ? -1 : undefined}
           >
             {content}
           </Button>
@@ -641,28 +629,9 @@ function RenderedNext({
 }) {
   const overlayId = "next";
 
-  if (isMeasure) {
-    return (
-      <BreadcrumbItem
-        data-measure-next=""
-        className={cn(debug && "outline outline-1 outline-purple-500/70")}
-      >
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="size-8 px-0"
-          aria-label={resolveLabel(strings.nextItems)}
-          tabIndex={-1}
-        >
-          <ChevronRight className="size-4" aria-hidden />
-        </Button>
-      </BreadcrumbItem>
-    );
-  }
-
   return (
     <BreadcrumbItem
+      data-measure-next={isMeasure ? "" : undefined}
       className={cn(debug && "outline outline-1 outline-purple-500/70")}
     >
       <ResponsiveOverlay
@@ -678,6 +647,7 @@ function RenderedNext({
             className="group size-8 px-0 text-muted-foreground"
             aria-label={resolveLabel(strings.nextItems)}
             disabled={nextItems.length === 0}
+            tabIndex={isMeasure ? -1 : undefined}
           >
             <ChevronRight
               className="size-4 transition-transform group-data-[state=open]:rotate-90"
