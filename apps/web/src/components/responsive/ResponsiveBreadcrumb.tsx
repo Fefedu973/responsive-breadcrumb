@@ -43,6 +43,8 @@ export function ResponsiveBreadcrumb({
   renderEllipsis,
   renderTitleOnly,
   renderMenuItem,
+  renderItemLink,
+  renderMenuLink,
   strategy = "start",
   preference = "none",
   showHomeIcon = true,
@@ -461,6 +463,8 @@ export function ResponsiveBreadcrumb({
       renderEllipsis={renderEllipsis}
       renderTitleOnly={renderTitleOnly}
       renderMenuItem={renderMenuItem}
+      renderItemLink={renderItemLink}
+      renderMenuLink={renderMenuLink}
       showHomeIcon={showHomeIcon}
       showNextArrow={showNextArrow}
       nextItems={nextItems}
@@ -512,6 +516,8 @@ export function ResponsiveBreadcrumb({
         renderEllipsis={renderEllipsis}
         renderTitleOnly={renderTitleOnly}
         renderMenuItem={renderMenuItem}
+        renderItemLink={renderItemLink}
+        renderMenuLink={renderMenuLink}
         isMobile={isMobile}
         showHomeIcon={showHomeIcon}
         showNextArrow={showNextArrow}
@@ -556,6 +562,8 @@ const MeasurementTree = React.forwardRef<
     renderEllipsis?: ResponsiveBreadcrumbProps["renderEllipsis"];
     renderTitleOnly?: ResponsiveBreadcrumbProps["renderTitleOnly"];
     renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
+    renderItemLink?: ResponsiveBreadcrumbProps["renderItemLink"];
+    renderMenuLink?: ResponsiveBreadcrumbProps["renderMenuLink"];
     isMobile: boolean;
     showHomeIcon: boolean;
     showNextArrow: boolean;
@@ -581,6 +589,8 @@ const MeasurementTree = React.forwardRef<
     renderEllipsis,
     renderTitleOnly,
     renderMenuItem,
+    renderItemLink,
+    renderMenuLink,
     isMobile,
     showHomeIcon,
     showNextArrow,
@@ -625,6 +635,8 @@ const MeasurementTree = React.forwardRef<
     renderEllipsis,
     renderTitleOnly,
     renderMenuItem,
+    renderItemLink,
+    renderMenuLink,
     showHomeIcon,
     showNextArrow,
     nextItems,

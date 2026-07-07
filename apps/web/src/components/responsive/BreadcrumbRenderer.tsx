@@ -54,6 +54,8 @@ export interface BreadcrumbRendererProps {
   renderEllipsis?: ResponsiveBreadcrumbProps["renderEllipsis"];
   renderTitleOnly?: ResponsiveBreadcrumbProps["renderTitleOnly"];
   renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
+  renderItemLink?: ResponsiveBreadcrumbProps["renderItemLink"];
+  renderMenuLink?: ResponsiveBreadcrumbProps["renderMenuLink"];
   showHomeIcon: boolean;
   showNextArrow: boolean;
   nextItems: SeparatorNavItem[];
@@ -91,6 +93,8 @@ export function BreadcrumbRenderer({
   renderEllipsis,
   renderTitleOnly,
   renderMenuItem,
+  renderItemLink,
+  renderMenuLink,
   showHomeIcon,
   showNextArrow,
   nextItems,
@@ -195,6 +199,7 @@ export function BreadcrumbRenderer({
                 isMeasure={isMeasure}
                 measurementScope={measurementScope}
                 renderItem={renderItem}
+                renderItemLink={renderItemLink}
                 showHomeIcon={showHomeIcon}
                 lastItemClickable={lastItemClickable}
                 onItemClick={onItemClick}
@@ -225,6 +230,7 @@ export function BreadcrumbRenderer({
                 separatorNavItems={separatorNavItems}
                 onItemClick={onItemClick}
                 renderMenuItem={renderMenuItem}
+                renderMenuLink={renderMenuLink}
                 strings={strings}
                 clickableLeftOfEllipsis={clickableLeftOfEllipsis}
                 separatorNavSide={separatorNavSide}
@@ -250,6 +256,7 @@ export function BreadcrumbRenderer({
                 customEllipsisElement={customEllipsisElement}
                 onItemClick={onItemClick}
                 renderMenuItem={renderMenuItem}
+                renderMenuLink={renderMenuLink}
                 showCollapsedCount={showCollapsedCount}
                 strings={strings}
                 debug={debug}
@@ -270,6 +277,7 @@ export function BreadcrumbRenderer({
                 onOpenOverlayChange={onOpenOverlayChange}
                 onItemClick={onItemClick}
                 renderMenuItem={renderMenuItem}
+                renderMenuLink={renderMenuLink}
                 strings={strings}
                 debug={debug}
               />
@@ -291,6 +299,7 @@ function RenderedItem({
   isMeasure,
   measurementScope,
   renderItem,
+  renderItemLink,
   showHomeIcon,
   lastItemClickable,
   onItemClick,
@@ -307,6 +316,7 @@ function RenderedItem({
   isMeasure: boolean;
   measurementScope?: BreadcrumbRendererProps["measurementScope"];
   renderItem?: ResponsiveBreadcrumbProps["renderItem"];
+  renderItemLink?: ResponsiveBreadcrumbProps["renderItemLink"];
   showHomeIcon: boolean;
   lastItemClickable: boolean;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
@@ -333,14 +343,26 @@ function RenderedItem({
     "inline-flex min-w-0 max-w-full shrink-0 items-center gap-1.5 truncate";
   const itemElement = interactive && item.href ? (
     <BreadcrumbLink asChild className={itemClassName} style={itemStyle}>
-      <a
-        href={item.href}
-        onClick={() => onItemClick?.(item)}
-        aria-disabled={item.disabled || undefined}
-        itemProp={schema === "microdata" ? "item" : undefined}
-      >
-        {contentWithSchema}
-      </a>
+      {renderItemLink?.({
+        item,
+        index,
+        mode,
+        current,
+        href: item.href,
+        children: contentWithSchema,
+        onClick: () => onItemClick?.(item),
+        ariaDisabled: item.disabled,
+        itemProp: schema === "microdata" ? "item" : undefined,
+      }) ?? (
+        <a
+          href={item.href}
+          onClick={() => onItemClick?.(item)}
+          aria-disabled={item.disabled || undefined}
+          itemProp={schema === "microdata" ? "item" : undefined}
+        >
+          {contentWithSchema}
+        </a>
+      )}
     </BreadcrumbLink>
   ) : interactive ? (
     <button
@@ -440,6 +462,7 @@ function RenderedSeparator({
   separatorNavItems,
   onItemClick,
   renderMenuItem,
+  renderMenuLink,
   strings,
   clickableLeftOfEllipsis,
   separatorNavSide,
@@ -460,6 +483,7 @@ function RenderedSeparator({
   separatorNavItems: Record<string, SeparatorNavItem[]>;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
   renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
+  renderMenuLink?: ResponsiveBreadcrumbProps["renderMenuLink"];
   strings: ResponsiveBreadcrumbStrings;
   clickableLeftOfEllipsis: boolean;
   separatorNavSide: "right" | "left";
@@ -545,6 +569,7 @@ function RenderedSeparator({
           compact={!isMobile}
           onItemClick={onItemClick}
           renderMenuItem={renderMenuItem}
+          renderMenuLink={renderMenuLink}
           onSelect={() => onOpenOverlayChange(null)}
           strings={strings}
         />
@@ -566,6 +591,7 @@ function RenderedEllipsis({
   customEllipsisElement,
   onItemClick,
   renderMenuItem,
+  renderMenuLink,
   showCollapsedCount,
   strings,
   debug,
@@ -582,6 +608,7 @@ function RenderedEllipsis({
   customEllipsisElement?: React.ReactNode;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
   renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
+  renderMenuLink?: ResponsiveBreadcrumbProps["renderMenuLink"];
   showCollapsedCount: boolean;
   strings: ResponsiveBreadcrumbStrings;
   debug: boolean;
@@ -626,6 +653,7 @@ function RenderedEllipsis({
           compact={!isMobile}
           onItemClick={onItemClick}
           renderMenuItem={renderMenuItem}
+          renderMenuLink={renderMenuLink}
           onSelect={() => onOpenOverlayChange(null)}
           strings={strings}
         />
@@ -644,6 +672,7 @@ function RenderedNext({
   onOpenOverlayChange,
   onItemClick,
   renderMenuItem,
+  renderMenuLink,
   strings,
   debug,
 }: {
@@ -656,6 +685,7 @@ function RenderedNext({
   onOpenOverlayChange: (id: OverlayId) => void;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
   renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
+  renderMenuLink?: ResponsiveBreadcrumbProps["renderMenuLink"];
   strings: ResponsiveBreadcrumbStrings;
   debug: boolean;
 }) {
@@ -696,6 +726,7 @@ function RenderedNext({
           compact={!isMobile}
           onItemClick={onItemClick}
           renderMenuItem={renderMenuItem}
+          renderMenuLink={renderMenuLink}
           onSelect={() => onOpenOverlayChange(null)}
           strings={strings}
         />
@@ -749,6 +780,7 @@ function MenuItems({
   compact,
   onItemClick,
   renderMenuItem,
+  renderMenuLink,
   onSelect,
   strings,
 }: {
@@ -757,6 +789,7 @@ function MenuItems({
   compact: boolean;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
   renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
+  renderMenuLink?: ResponsiveBreadcrumbProps["renderMenuLink"];
   onSelect: () => void;
   strings: ResponsiveBreadcrumbStrings;
 }) {
@@ -797,16 +830,28 @@ function MenuItems({
                 compact ? "h-7 px-2 text-sm" : "h-auto px-2 py-2",
               )}
             >
-              <a
-                href={item.href}
-                aria-label={itemAriaLabel}
-                onClick={() => {
+              {renderMenuLink?.({
+                item,
+                mode,
+                href: item.href,
+                children: content,
+                ariaLabel: itemAriaLabel,
+                onClick: () => {
                   onItemClick?.(item);
                   onSelect();
-                }}
-              >
-                {content}
-              </a>
+                },
+              }) ?? (
+                <a
+                  href={item.href}
+                  aria-label={itemAriaLabel}
+                  onClick={() => {
+                    onItemClick?.(item);
+                    onSelect();
+                  }}
+                >
+                  {content}
+                </a>
+              )}
             </Button>
           );
         }

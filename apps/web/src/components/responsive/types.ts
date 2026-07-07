@@ -127,6 +127,27 @@ export interface ResponsiveBreadcrumbProps {
     mode: "menu";
     disabled: boolean;
   }) => React.ReactNode;
+  /** Link wrapper renderer for framework routers. */
+  renderItemLink?: (ctx: {
+    item: BreadcrumbData;
+    index: number;
+    mode: MeasurementMode;
+    current: boolean;
+    href: string;
+    children: React.ReactNode;
+    onClick: () => void;
+    ariaDisabled?: boolean;
+    itemProp?: string;
+  }) => React.ReactNode;
+  /** Menu link wrapper renderer for collapsed and separator navigation menus. */
+  renderMenuLink?: (ctx: {
+    item: BreadcrumbData | SeparatorNavItem;
+    mode: MeasurementMode;
+    href: string;
+    children: React.ReactNode;
+    ariaLabel: string;
+    onClick: () => void;
+  }) => React.ReactNode;
   /** Where the collapsed range should be biased when several layouts fit. */
   strategy?: CollapseStrategy;
   /** Tie-breaker for fitting layouts. */
