@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { ResponsiveBreadcrumb, type BreadcrumbDebugState } from "@/components/responsive/ResponsiveBreadcrumb";
+import { useState, useCallback, useEffect, useRef } from "react";
+import Link from "next/link";
+import type { Route } from "next";
+import {
+    ResponsiveBreadcrumb,
+    type BreadcrumbDebugState,
+    type BreadcrumbFocusRing,
+    type ResponsiveBreadcrumbProps,
+} from "@/components/responsive/ResponsiveBreadcrumb";
 import { breadcrumbDebugStore, useBreadcrumbDebugStore } from "@/lib/breadcrumb-debug-store";
 import {
     ResizableHandle,
@@ -382,6 +389,13 @@ export default function Home() {
     const [debugDirection, setDebugDirection] = useState<"ltr" | "rtl" | "auto">("auto");
     const [debugAlwaysShowHead, setDebugAlwaysShowHead] = useState(1);
     const [debugAlwaysShowTail, setDebugAlwaysShowTail] = useState(1);
+    const [debugFocusRing, setDebugFocusRing] = useState<BreadcrumbFocusRing>("inset");
+
+    // Focus ring and router link demo state
+    const [focusRingDemo, setFocusRingDemo] = useState<BreadcrumbFocusRing>("inset");
+    const [focusRingOverflow, setFocusRingOverflow] = useState<"collapse" | "scroll" | "wrap">("collapse");
+    const [focusRingWidth, setFocusRingWidth] = useState(360);
+    const focusRingFirstLinkRef = useRef<HTMLAnchorElement | null>(null);
 
     // Custom breadcrumb items
     const [customBreadcrumbItems, setCustomBreadcrumbItems] = useState<Array<{ key: string; label: string; href?: string; canCollapse: boolean; canTruncate: boolean; clickable?: boolean; icon: string; customElement?: string }>>([
@@ -537,6 +551,25 @@ export default function Home() {
             },
             { key: "city", label: "San Francisco" },
         ],
+
+        focusRing: [
+            {
+                key: "workspace", label: "Workspace", href: "/#workspace", icon: <Building className="h-4 w-4" />
+            },
+            {
+                key: "projects", label: "Projects", href: "/#projects", icon: <Folder className="h-4 w-4" />
+            },
+            {
+                key: "responsive-system", label: "Responsive Component System", href: "/#responsive-system"
+            },
+            {
+                key: "navigation", label: "Navigation Primitives", href: "/#navigation"
+            },
+            {
+                key: "breadcrumb", label: "Responsive Breadcrumb Registry Item", href: "/#breadcrumb"
+            },
+            { key: "focus", label: "Configurable Focus Ring" },
+        ],
     };
 
     // Tree navigation data
@@ -588,6 +621,58 @@ export default function Home() {
         },
         { key: "security", label: "Security", href: "#security", icon: <FileText className="h-4 w-4" /> },
     ];
+
+    const focusRingSeparatorNav = {
+        projects: [
+            {
+                key: "registry", label: "Registry", href: "/#registry", icon: <Package className="h-4 w-4" />
+            },
+            {
+                key: "demo-site", label: "Demo Site", href: "/#demo-site", icon: <Monitor className="h-4 w-4" />
+            },
+            {
+                key: "documentation", label: "Documentation", href: "/#documentation", icon: <FileText className="h-4 w-4" />
+            },
+        ],
+        breadcrumb: [
+            {
+                key: "focus-ring", label: "Focus Ring", href: "/#focus-ring", icon: <Target className="h-4 w-4" />
+            },
+            {
+                key: "router-links", label: "Router Links", href: "/#router-links", icon: <Globe className="h-4 w-4" />
+            },
+        ],
+    };
+
+    const renderDemoItemLink = useCallback<NonNullable<ResponsiveBreadcrumbProps["renderItemLink"]>>(
+        ({ href, children, onClick, ariaDisabled, itemProp, index }) => (
+            <Link
+                ref={index === 0 ? focusRingFirstLinkRef : undefined}
+                href={href as Route}
+                prefetch={true}
+                onClick={onClick}
+                aria-disabled={ariaDisabled || undefined}
+                itemProp={itemProp}
+            >
+                {children}
+            </Link>
+        ),
+        [],
+    );
+
+    const renderDemoMenuLink = useCallback<NonNullable<ResponsiveBreadcrumbProps["renderMenuLink"]>>(
+        ({ href, children, ariaLabel, onClick }) => (
+            <Link
+                href={href as Route}
+                prefetch={true}
+                aria-label={ariaLabel}
+                onClick={onClick}
+            >
+                {children}
+            </Link>
+        ),
+        [],
+    );
 
     const handleCollapsibleToggle = (index: number) => {
         setCollapsibleItems(prev => prev.map((item, i) =>
@@ -739,12 +824,13 @@ export default function Home() {
 
                 {/* Demo Tabs */}
                 < Tabs defaultValue="comprehensive" className="space-y-6">
-                    < TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
+                    < TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
                         < TabsTrigger value="comprehensive" className="text-xs">Comprehensive</TabsTrigger>
                         < TabsTrigger value="strategies" className="text-xs">Strategies</TabsTrigger>
                         < TabsTrigger value="mobile" className="text-xs">Mobile/Truncation</TabsTrigger>
                         < TabsTrigger value="multi-ellipsis" className="text-xs">Multi-Ellipsis</TabsTrigger>
                         < TabsTrigger value="tree" className="text-xs">Tree Navigation</TabsTrigger>
+                        < TabsTrigger value="focus-ring" className="text-xs">Focus Rings</TabsTrigger>
                         < TabsTrigger value="collapsible" className="text-xs">Collapsible Control</TabsTrigger>
                         < TabsTrigger value="debug" className="text-xs">Debug Mode</TabsTrigger>
                     </TabsList >
@@ -1633,6 +1719,149 @@ export default function Home() {
                         </div >
                     </TabsContent >
 
+                    {/* Focus Ring & Router Link Demo */}
+                    < TabsContent value="focus-ring">
+                        < DemoLayout
+                            title="Focus Rings & Router Links"
+                            description="Compare focus ring modes in constrained collapse layouts and verify custom router links with next/link render props."
+                            controls={
+                                < div className="grid gap-4 md:grid-cols-3">
+                                    < div className="space-y-2">
+                                        < Label htmlFor="focus-ring-mode">Focus Ring</Label>
+                                        < Select value={focusRingDemo} onValueChange={(v: any) => setFocusRingDemo(v)}>
+                                            <SelectTrigger id="focus-ring-mode">
+                                                < SelectValue />
+                                            </SelectTrigger >
+                                            <SelectContent>
+                                                <SelectItem value="inset">Inset - collapse default</SelectItem>
+                                                <SelectItem value="outer">Outer - shadcn style</SelectItem>
+                                                <SelectItem value="clip-margin">Clip Margin - progressive</SelectItem>
+                                                <SelectItem value="none">None</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="focus-ring-overflow">Overflow Behavior</Label>
+                                        <Select value={focusRingOverflow} onValueChange={(v: any) => setFocusRingOverflow(v)}>
+                                            <SelectTrigger id="focus-ring-overflow">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="collapse">Collapse</SelectItem>
+                                                <SelectItem value="scroll">Scroll</SelectItem>
+                                                <SelectItem value="wrap">Wrap</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="focus-ring-width">
+                                            Demo Width: {focusRingWidth}px
+                                        </Label>
+                                        <Slider
+                                            id="focus-ring-width"
+                                            min={240}
+                                            max={720}
+                                            step={20}
+                                            value={[focusRingWidth]}
+                                            onValueChange={(value) => setFocusRingWidth(value[0])}
+                                        />
+                                    </div>
+                                </div>
+                            }
+                        >
+                            <div className="space-y-4">
+                                <div
+                                    className="rounded-md border bg-background p-3 shadow-xs"
+                                    style={{ width: `${focusRingWidth}px`, maxWidth: "100%" }}
+                                >
+                                    <ResponsiveBreadcrumb
+                                        items={scenarios.focusRing}
+                                        strategy="center"
+                                        preference="minimize-count"
+                                        alwaysShow={{ head: 1, tail: 1 }}
+                                        separatorNavItems={focusRingSeparatorNav}
+                                        separatorNavSide="left"
+                                        showHomeIcon={false}
+                                        showCurrentInNav="with-others"
+                                        showCollapsedCount
+                                        enableTruncation
+                                        truncateMinWidth={84}
+                                        truncateThreshold={132}
+                                        fallbackAtWidth={220}
+                                        overflowBehavior={focusRingOverflow}
+                                        focusRing={focusRingDemo}
+                                        renderItemLink={renderDemoItemLink}
+                                        renderMenuLink={renderDemoMenuLink}
+                                        onItemClick={(item) => console.log("Focus ring demo clicked:", item)}
+                                        schema="none"
+                                        strings={{
+                                            navigateTo: (label) => `Open ${label}`,
+                                            showCollapsedItems: (count) =>
+                                                count === 1
+                                                    ? "Open collapsed breadcrumb item"
+                                                    : `Open ${count} collapsed breadcrumb items`,
+                                            moreOptions: "Collapsed path",
+                                            nextItems: "Next entries",
+                                            showSiblingItems: (label) => `Open sibling links for ${label}`,
+                                            noItemsAvailable: "No links available",
+                                            itemLabelFallback: "breadcrumb item",
+                                            truncatedItemTooltip: (label) => label,
+                                            measureEllipsis: "Measure collapsed path",
+                                            measureNextItems: "Measure next entries",
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => focusRingFirstLinkRef.current?.focus({ preventScroll: true })}
+                                    >
+                                        Focus first crumb
+                                    </Button>
+                                    <Badge variant="secondary">renderItemLink: next/link</Badge>
+                                    <Badge variant="secondary">renderMenuLink: next/link</Badge>
+                                    <Badge variant="outline">data-focus-ring="{focusRingDemo}"</Badge>
+                                </div>
+                            </div>
+                        </DemoLayout>
+
+                        <div className="mt-6 grid gap-4 md:grid-cols-3">
+                            <Card className="p-4">
+                                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                    <Target className="h-4 w-4 text-green-600" />
+                                    Inset Ring
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    The production default for collapse mode. It keeps the shadcn ring color and transition while drawing inside the clipped breadcrumb.
+                                </p>
+                            </Card>
+
+                            <Card className="p-4">
+                                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                    <Ruler className="h-4 w-4 text-blue-600" />
+                                    Clip Margin
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Optional progressive mode using overflow clipping margin for browsers that support it.
+                                </p>
+                            </Card>
+
+                            <Card className="p-4">
+                                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                    <Globe className="h-4 w-4 text-purple-600" />
+                                    Router Links
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Item links and menu links are rendered through the public API, so app routers can provide prefetching without patching the component.
+                                </p>
+                            </Card>
+                        </div>
+                    </TabsContent>
+
                     {/* Collapsible Control Demo */}
                     < TabsContent value="collapsible">
                         < DemoLayout
@@ -1819,6 +2048,24 @@ export default function Home() {
                                             </div>
                                             <p className="text-xs text-muted-foreground pl-6">
                                                 Lock measurements when drawers/popovers open
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="debug-focus-ring">Focus Ring</Label>
+                                            <Select value={debugFocusRing} onValueChange={(v: any) => setDebugFocusRing(v)}>
+                                                <SelectTrigger id="debug-focus-ring">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="inset">Inset</SelectItem>
+                                                    <SelectItem value="outer">Outer</SelectItem>
+                                                    <SelectItem value="clip-margin">Clip Margin</SelectItem>
+                                                    <SelectItem value="none">None</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-muted-foreground">
+                                                Controls focus styling for links and triggers
                                             </p>
                                         </div>
 
@@ -2860,6 +3107,7 @@ export default function Home() {
                                 onDebugStateChange={pushDebug}
                                 lockOnOverlayOpen={debugLockOnOverlayOpen}
                                 overflowBehavior={debugOverflowBehavior}
+                                focusRing={debugFocusRing}
                                 fallbackAtWidth={debugFallbackAtWidth}
                                 lastItemClickable={debugLastItemClickable}
                                 schema={debugSchema}
