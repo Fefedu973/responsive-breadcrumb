@@ -399,6 +399,8 @@ export default function Home() {
     const [displayModesWidth, setDisplayModesWidth] = useState(420);
     const [compactRevealIndex, setCompactRevealIndex] = useState<number | null>(null);
     const [selectedOverlayKey, setSelectedOverlayKey] = useState("components");
+    const [animateLayoutWide, setAnimateLayoutWide] = useState(false);
+    const animateLayoutWidth = animateLayoutWide ? 660 : 300;
 
     // Custom breadcrumb items
     const [customBreadcrumbItems, setCustomBreadcrumbItems] = useState<Array<{ key: string; label: string; href?: string; canCollapse: boolean; canTruncate: boolean; clickable?: boolean; icon: string; customElement?: string }>>([
@@ -1993,6 +1995,54 @@ export default function Home() {
                                                     {item.label}
                                                 </Button>
                                             ))}
+                                        </div>
+                                    </Card>
+
+                                    <Card className="p-4 lg:col-span-2">
+                                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                                            <h3 className="font-semibold">Animated Layout</h3>
+                                            <Badge variant="outline">animateLayout</Badge>
+                                            <Badge variant="secondary">{animateLayoutWidth}px</Badge>
+                                        </div>
+                                        <div
+                                            className="rounded-md border bg-background p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none"
+                                            style={{ width: `${animateLayoutWidth}px`, maxWidth: "100%" }}
+                                        >
+                                            <ResponsiveBreadcrumb
+                                                items={scenarios.compactReveal}
+                                                strategy="center"
+                                                preference="minimize-count"
+                                                showHomeIcon={false}
+                                                enableTruncation
+                                                truncationMode="compact-reveal"
+                                                compactReveal={{
+                                                    token: "..",
+                                                    revealOn: "both",
+                                                    alwaysShowHead: 0,
+                                                    alwaysShowTail: 1,
+                                                }}
+                                                overflowBehavior="collapse"
+                                                focusRing="inset"
+                                                animateLayout={{ layout: true, presence: true, truncate: true, duration: 300 }}
+                                                renderItemLink={renderDemoItemLink}
+                                                schema="none"
+                                            />
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            <Button
+                                                variant={animateLayoutWide ? "outline" : "default"}
+                                                size="sm"
+                                                onClick={() => setAnimateLayoutWide(false)}
+                                            >
+                                                Compact
+                                            </Button>
+                                            <Button
+                                                variant={animateLayoutWide ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => setAnimateLayoutWide(true)}
+                                            >
+                                                Wide
+                                            </Button>
                                         </div>
                                     </Card>
 
