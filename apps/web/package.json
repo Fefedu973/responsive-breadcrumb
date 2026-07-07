@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack --port=3005",
     "build": "next build",
+    "test": "bun tests/solveBreadcrumbLayout.test.ts && bun tests/responsiveBreadcrumbSource.test.ts",
     "test:solver": "bun tests/solveBreadcrumbLayout.test.ts",
+    "test:component": "bun tests/responsiveBreadcrumbSource.test.ts",
     "start": "next start"
   },
   "dependencies": {

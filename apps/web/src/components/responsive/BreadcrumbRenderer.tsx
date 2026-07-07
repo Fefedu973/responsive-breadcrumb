@@ -53,6 +53,7 @@ export interface BreadcrumbRendererProps {
   renderItem?: ResponsiveBreadcrumbProps["renderItem"];
   renderEllipsis?: ResponsiveBreadcrumbProps["renderEllipsis"];
   renderTitleOnly?: ResponsiveBreadcrumbProps["renderTitleOnly"];
+  renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
   showHomeIcon: boolean;
   showNextArrow: boolean;
   nextItems: SeparatorNavItem[];
@@ -89,6 +90,7 @@ export function BreadcrumbRenderer({
   renderItem,
   renderEllipsis,
   renderTitleOnly,
+  renderMenuItem,
   showHomeIcon,
   showNextArrow,
   nextItems,
@@ -128,7 +130,9 @@ export function BreadcrumbRenderer({
           )}
         >
           <BreadcrumbItem
-            data-measure-title-only={isMeasure ? "" : undefined}
+            data-measure-title-only={
+              isMeasure && measurementScope === "title-only" ? "" : undefined
+            }
             className="min-w-0 max-w-full"
           >
             <BreadcrumbPage className="inline-flex min-w-0 max-w-full items-center gap-1.5 truncate">
@@ -189,6 +193,7 @@ export function BreadcrumbRenderer({
                 current={node.index === items.length - 1}
                 mode={mode}
                 isMeasure={isMeasure}
+                measurementScope={measurementScope}
                 renderItem={renderItem}
                 showHomeIcon={showHomeIcon}
                 lastItemClickable={lastItemClickable}
@@ -212,12 +217,14 @@ export function BreadcrumbRenderer({
                 items={items}
                 mode={mode}
                 isMeasure={isMeasure}
+                measurementScope={measurementScope}
                 isMobile={isMobile}
                 openOverlay={openOverlay}
                 onOpenOverlayChange={onOpenOverlayChange}
                 renderSeparator={renderSeparator}
                 separatorNavItems={separatorNavItems}
                 onItemClick={onItemClick}
+                renderMenuItem={renderMenuItem}
                 strings={strings}
                 clickableLeftOfEllipsis={clickableLeftOfEllipsis}
                 separatorNavSide={separatorNavSide}
@@ -235,12 +242,14 @@ export function BreadcrumbRenderer({
                 items={items}
                 mode={mode}
                 isMeasure={isMeasure}
+                measurementScope={measurementScope}
                 isMobile={isMobile}
                 openOverlay={openOverlay}
                 onOpenOverlayChange={onOpenOverlayChange}
                 renderEllipsis={renderEllipsis}
                 customEllipsisElement={customEllipsisElement}
                 onItemClick={onItemClick}
+                renderMenuItem={renderMenuItem}
                 showCollapsedCount={showCollapsedCount}
                 strings={strings}
                 debug={debug}
@@ -255,10 +264,12 @@ export function BreadcrumbRenderer({
                 nextItems={nextItems}
                 mode={mode}
                 isMeasure={isMeasure}
+                measurementScope={measurementScope}
                 isMobile={isMobile}
                 openOverlay={openOverlay}
                 onOpenOverlayChange={onOpenOverlayChange}
                 onItemClick={onItemClick}
+                renderMenuItem={renderMenuItem}
                 strings={strings}
                 debug={debug}
               />
@@ -278,6 +289,7 @@ function RenderedItem({
   current,
   mode,
   isMeasure,
+  measurementScope,
   renderItem,
   showHomeIcon,
   lastItemClickable,
@@ -293,6 +305,7 @@ function RenderedItem({
   current: boolean;
   mode: MeasurementMode;
   isMeasure: boolean;
+  measurementScope?: BreadcrumbRendererProps["measurementScope"];
   renderItem?: ResponsiveBreadcrumbProps["renderItem"];
   showHomeIcon: boolean;
   lastItemClickable: boolean;
@@ -364,7 +377,9 @@ function RenderedItem({
 
   return (
     <BreadcrumbItem
-      data-measure-item={isMeasure ? index : undefined}
+      data-measure-item={
+        isMeasure && measurementScope === "full" ? index : undefined
+      }
       itemProp={schema === "microdata" ? "itemListElement" : undefined}
       itemScope={schema === "microdata" ? true : undefined}
       itemType={
@@ -417,12 +432,14 @@ function RenderedSeparator({
   items,
   mode,
   isMeasure,
+  measurementScope,
   isMobile,
   openOverlay,
   onOpenOverlayChange,
   renderSeparator,
   separatorNavItems,
   onItemClick,
+  renderMenuItem,
   strings,
   clickableLeftOfEllipsis,
   separatorNavSide,
@@ -435,12 +452,14 @@ function RenderedSeparator({
   items: BreadcrumbData[];
   mode: MeasurementMode;
   isMeasure: boolean;
+  measurementScope?: BreadcrumbRendererProps["measurementScope"];
   isMobile: boolean;
   openOverlay: OverlayId;
   onOpenOverlayChange: (id: OverlayId) => void;
   renderSeparator?: ResponsiveBreadcrumbProps["renderSeparator"];
   separatorNavItems: Record<string, SeparatorNavItem[]>;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
+  renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
   strings: ResponsiveBreadcrumbStrings;
   clickableLeftOfEllipsis: boolean;
   separatorNavSide: "right" | "left";
@@ -478,7 +497,8 @@ function RenderedSeparator({
       previousKey: previousItem?.key ?? "",
       nextKey: nextItem?.key ?? "",
       renderSeparator,
-      measureIndex: isMeasure ? node.after : null,
+      measureIndex:
+        isMeasure && measurementScope === "full" ? node.after : null,
       debug,
     });
   }
@@ -492,7 +512,9 @@ function RenderedSeparator({
 
   return (
     <BreadcrumbItem
-      data-measure-separator={isMeasure ? node.after : undefined}
+      data-measure-separator={
+        isMeasure && measurementScope === "full" ? node.after : undefined
+      }
       data-slot="breadcrumb-interactive-separator"
       className={cn(debug && "outline outline-1 outline-cyan-500/60")}
     >
@@ -522,6 +544,7 @@ function RenderedSeparator({
           mode={mode}
           compact={!isMobile}
           onItemClick={onItemClick}
+          renderMenuItem={renderMenuItem}
           onSelect={() => onOpenOverlayChange(null)}
           strings={strings}
         />
@@ -535,12 +558,14 @@ function RenderedEllipsis({
   items,
   mode,
   isMeasure,
+  measurementScope,
   isMobile,
   openOverlay,
   onOpenOverlayChange,
   renderEllipsis,
   customEllipsisElement,
   onItemClick,
+  renderMenuItem,
   showCollapsedCount,
   strings,
   debug,
@@ -549,12 +574,14 @@ function RenderedEllipsis({
   items: BreadcrumbData[];
   mode: MeasurementMode;
   isMeasure: boolean;
+  measurementScope?: BreadcrumbRendererProps["measurementScope"];
   isMobile: boolean;
   openOverlay: OverlayId;
   onOpenOverlayChange: (id: OverlayId) => void;
   renderEllipsis?: ResponsiveBreadcrumbProps["renderEllipsis"];
   customEllipsisElement?: React.ReactNode;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
+  renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
   showCollapsedCount: boolean;
   strings: ResponsiveBreadcrumbStrings;
   debug: boolean;
@@ -570,7 +597,9 @@ function RenderedEllipsis({
 
   return (
     <BreadcrumbItem
-      data-measure-ellipsis={isMeasure ? "" : undefined}
+      data-measure-ellipsis={
+        isMeasure && measurementScope === "ellipsis" ? "" : undefined
+      }
       className={cn(debug && "outline outline-1 outline-yellow-500/70")}
     >
       <ResponsiveOverlay
@@ -596,6 +625,7 @@ function RenderedEllipsis({
           mode={mode}
           compact={!isMobile}
           onItemClick={onItemClick}
+          renderMenuItem={renderMenuItem}
           onSelect={() => onOpenOverlayChange(null)}
           strings={strings}
         />
@@ -608,20 +638,24 @@ function RenderedNext({
   nextItems,
   mode,
   isMeasure,
+  measurementScope,
   isMobile,
   openOverlay,
   onOpenOverlayChange,
   onItemClick,
+  renderMenuItem,
   strings,
   debug,
 }: {
   nextItems: SeparatorNavItem[];
   mode: MeasurementMode;
   isMeasure: boolean;
+  measurementScope?: BreadcrumbRendererProps["measurementScope"];
   isMobile: boolean;
   openOverlay: OverlayId;
   onOpenOverlayChange: (id: OverlayId) => void;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
+  renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
   strings: ResponsiveBreadcrumbStrings;
   debug: boolean;
 }) {
@@ -629,7 +663,9 @@ function RenderedNext({
 
   return (
     <BreadcrumbItem
-      data-measure-next={isMeasure ? "" : undefined}
+      data-measure-next={
+        isMeasure && measurementScope === "full" ? "" : undefined
+      }
       className={cn(debug && "outline outline-1 outline-purple-500/70")}
     >
       <ResponsiveOverlay
@@ -659,6 +695,7 @@ function RenderedNext({
           mode={mode}
           compact={!isMobile}
           onItemClick={onItemClick}
+          renderMenuItem={renderMenuItem}
           onSelect={() => onOpenOverlayChange(null)}
           strings={strings}
         />
@@ -711,6 +748,7 @@ function MenuItems({
   mode,
   compact,
   onItemClick,
+  renderMenuItem,
   onSelect,
   strings,
 }: {
@@ -718,6 +756,7 @@ function MenuItems({
   mode: MeasurementMode;
   compact: boolean;
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
+  renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
   onSelect: () => void;
   strings: ResponsiveBreadcrumbStrings;
 }) {
@@ -737,13 +776,15 @@ function MenuItems({
           resolveLabel(strings.itemLabelFallback),
         );
         const itemAriaLabel = resolveLabel(strings.navigateTo, itemLabel);
-        const content = (
-          <>
-            {item.icon}
-            <span className="min-w-0 truncate">{item.label}</span>
-          </>
-        );
         const disabled = item.disabled || item.clickable === false;
+        const content = (
+          renderMenuItem?.({ item, mode: "menu", disabled }) ?? (
+            <>
+              {item.icon}
+              <span className="min-w-0 truncate">{item.label}</span>
+            </>
+          )
+        );
 
         if (item.href && !disabled) {
           return (

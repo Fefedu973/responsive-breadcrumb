@@ -45,8 +45,10 @@ import { ResponsiveBreadcrumb } from "@/components/ui/responsive-breadcrumb";
 - Programmatic pre-collapse with `forceCollapse`.
 - Priority-aware collapse with `itemPriority`.
 - Title-only fallback for very small containers.
+- Optional truncation before collapse for long labels.
 - Optional scroll and wrap overflow modes.
 - Accessible popover and drawer overlays.
+- Custom menu item rendering with `renderMenuItem`.
 - Localizable visible and ARIA labels through `strings`.
 - Optional Schema.org JSON-LD or microdata.
 - Focused solver tests.
@@ -66,6 +68,7 @@ registry.json
 
 apps/web/tests/
   solveBreadcrumbLayout.test.ts
+  responsiveBreadcrumbSource.test.ts
 ```
 
 Local experiments and old implementations are intentionally not published.
@@ -93,7 +96,7 @@ http://localhost:3005
 Run checks:
 
 ```bash
-bun run --cwd apps/web test:solver
+bun run --cwd apps/web test
 bunx tsc --noEmit -p apps/web/tsconfig.json
 bun run registry:validate
 bun run registry:build

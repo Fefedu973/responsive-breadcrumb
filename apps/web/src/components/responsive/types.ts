@@ -19,7 +19,7 @@ export interface BreadcrumbData {
   icon?: React.ReactNode;
   /**
    * Visible custom content for the item. Prefer renderItem for new code so the
-   * component can render a lighter measurement/menu variant when needed.
+   * component can render a lighter measurement variant when needed.
    */
   customElement?: React.ReactNode;
   /**
@@ -103,7 +103,7 @@ export interface ResponsiveBreadcrumbProps {
   items: BreadcrumbData[];
   /** Custom separator renderer. Keep its DOM close to the visible separator width. */
   renderSeparator?: (prevKey: string, nextKey: string) => React.ReactNode;
-  /** Item render prop used for visible, measurement, and menu contexts. */
+  /** Item render prop used for visible and measurement contexts. */
   renderItem?: (ctx: {
     item: BreadcrumbData;
     index: number;
@@ -120,6 +120,12 @@ export interface ResponsiveBreadcrumbProps {
     item: BreadcrumbData | undefined;
     fallback: React.ReactNode;
     mode: MeasurementMode;
+  }) => React.ReactNode;
+  /** Menu item renderer for collapsed, separator, and next-item overlays. */
+  renderMenuItem?: (ctx: {
+    item: BreadcrumbData | SeparatorNavItem;
+    mode: "menu";
+    disabled: boolean;
   }) => React.ReactNode;
   /** Where the collapsed range should be biased when several layouts fit. */
   strategy?: CollapseStrategy;

@@ -42,6 +42,7 @@ export function ResponsiveBreadcrumb({
   renderItem,
   renderEllipsis,
   renderTitleOnly,
+  renderMenuItem,
   strategy = "start",
   preference = "none",
   showHomeIcon = true,
@@ -251,11 +252,6 @@ export function ResponsiveBreadcrumb({
     ],
   );
 
-  const untruncatedLayout = React.useMemo(
-    () => buildLayoutForWidths(itemWidths, untruncatedFullLayout),
-    [buildLayoutForWidths, itemWidths, untruncatedFullLayout],
-  );
-
   const titleOnlyForcedByLoading =
     isLoading &&
     (loadingFallback === "title" ||
@@ -269,7 +265,8 @@ export function ResponsiveBreadcrumb({
     hasCurrentMeasurements &&
     !titleOnlyForcedByLoading &&
     !titleOnlyForcedByWidth &&
-    untruncatedLayout.some((node) => node.type === "title-only");
+    getLayoutWidth(untruncatedFullLayout, measurements.gap) >
+      measurements.containerWidth;
 
   const truncation = React.useMemo(
     () =>
@@ -321,21 +318,59 @@ export function ResponsiveBreadcrumb({
     ],
   );
 
-  const hasTruncatedItems = Object.keys(truncation.truncatedWidths).length > 0;
-  const layout = React.useMemo<LayoutNode[]>(() => {
-    if (!shouldTryTruncation || !hasTruncatedItems) {
-      return untruncatedLayout;
-    }
+  const layout = React.useMemo(
+    () => buildLayoutForWidths(truncation.itemWidths, fullLayout),
+    [buildLayoutForWidths, fullLayout, truncation.itemWidths],
+  );
 
-    return buildLayoutForWidths(truncation.itemWidths, fullLayout);
+  const validOverlayIds = React.useMemo(() => {
+    const ids = new Set<string>();
+
+    layout.forEach((node, nodeIndex) => {
+      if (node.type === "ellipsis") {
+        ids.add(`ellipsis-${node.from}-${node.to}`);
+        return;
+      }
+
+      if (node.type === "next" && nextItems.length > 0) {
+        ids.add("next");
+        return;
+      }
+
+      if (node.type === "separator") {
+        const overlayId = getSeparatorOverlayId({
+          node,
+          layout,
+          nodeIndex,
+          items,
+          separatorNavItems,
+          clickableLeftOfEllipsis,
+          separatorNavSide,
+          showCurrentInNav,
+        });
+
+        if (overlayId) {
+          ids.add(overlayId);
+        }
+      }
+    });
+
+    return ids;
   }, [
-    buildLayoutForWidths,
-    fullLayout,
-    hasTruncatedItems,
-    shouldTryTruncation,
-    truncation.itemWidths,
-    untruncatedLayout,
+    clickableLeftOfEllipsis,
+    items,
+    layout,
+    nextItems.length,
+    separatorNavItems,
+    separatorNavSide,
+    showCurrentInNav,
   ]);
+
+  React.useEffect(() => {
+    if (openOverlay && !validOverlayIds.has(openOverlay)) {
+      setOpenOverlay(null);
+    }
+  }, [openOverlay, validOverlayIds]);
 
   const schemaJson = React.useMemo(() => {
     if (schema !== "json-ld") {
@@ -425,6 +460,7 @@ export function ResponsiveBreadcrumb({
       renderItem={renderItem}
       renderEllipsis={renderEllipsis}
       renderTitleOnly={renderTitleOnly}
+      renderMenuItem={renderMenuItem}
       showHomeIcon={showHomeIcon}
       showNextArrow={showNextArrow}
       nextItems={nextItems}
@@ -475,6 +511,7 @@ export function ResponsiveBreadcrumb({
         renderItem={renderItem}
         renderEllipsis={renderEllipsis}
         renderTitleOnly={renderTitleOnly}
+        renderMenuItem={renderMenuItem}
         isMobile={isMobile}
         showHomeIcon={showHomeIcon}
         showNextArrow={showNextArrow}
@@ -486,7 +523,9 @@ export function ResponsiveBreadcrumb({
         titleOnlyIcon={titleOnlyIcon}
         titleOnlyCustomElement={titleOnlyCustomElement}
         customEllipsisElement={customEllipsisElement}
+        lastItemClickable={lastItemClickable}
         showCollapsedCount={showCollapsedCount}
+        clickableLeftOfEllipsis={clickableLeftOfEllipsis}
         strings={resolvedStrings}
         isRtl={isRtl}
       />
@@ -516,6 +555,7 @@ const MeasurementTree = React.forwardRef<
     renderItem?: ResponsiveBreadcrumbProps["renderItem"];
     renderEllipsis?: ResponsiveBreadcrumbProps["renderEllipsis"];
     renderTitleOnly?: ResponsiveBreadcrumbProps["renderTitleOnly"];
+    renderMenuItem?: ResponsiveBreadcrumbProps["renderMenuItem"];
     isMobile: boolean;
     showHomeIcon: boolean;
     showNextArrow: boolean;
@@ -527,7 +567,9 @@ const MeasurementTree = React.forwardRef<
     titleOnlyIcon?: React.ReactNode;
     titleOnlyCustomElement?: React.ReactNode;
     customEllipsisElement?: React.ReactNode;
+    lastItemClickable: boolean;
     showCollapsedCount: boolean;
+    clickableLeftOfEllipsis: boolean;
     strings: ResponsiveBreadcrumbStrings;
     isRtl: boolean;
   }
@@ -538,6 +580,7 @@ const MeasurementTree = React.forwardRef<
     renderItem,
     renderEllipsis,
     renderTitleOnly,
+    renderMenuItem,
     isMobile,
     showHomeIcon,
     showNextArrow,
@@ -549,7 +592,9 @@ const MeasurementTree = React.forwardRef<
     titleOnlyIcon,
     titleOnlyCustomElement,
     customEllipsisElement,
+    lastItemClickable,
     showCollapsedCount,
+    clickableLeftOfEllipsis,
     strings,
     isRtl,
   },
@@ -579,6 +624,7 @@ const MeasurementTree = React.forwardRef<
     renderItem,
     renderEllipsis,
     renderTitleOnly,
+    renderMenuItem,
     showHomeIcon,
     showNextArrow,
     nextItems,
@@ -588,10 +634,10 @@ const MeasurementTree = React.forwardRef<
     titleOnlyIcon,
     titleOnlyCustomElement,
     customEllipsisElement,
-    lastItemClickable: false,
+    lastItemClickable,
     showCollapsedCount,
     strings,
-    clickableLeftOfEllipsis: true,
+    clickableLeftOfEllipsis,
     separatorNavSide,
     overflowBehavior: "collapse" as const,
     truncatedWidths: {},
@@ -783,6 +829,114 @@ function getCanTruncate(item: BreadcrumbData, index: number, count: number) {
   }
 
   return index !== count - 1;
+}
+
+function getSeparatorOverlayId({
+  node,
+  layout,
+  nodeIndex,
+  items,
+  separatorNavItems,
+  clickableLeftOfEllipsis,
+  separatorNavSide,
+  showCurrentInNav,
+}: {
+  node: Extract<LayoutNode, { type: "separator" }>;
+  layout: LayoutNode[];
+  nodeIndex: number;
+  items: BreadcrumbData[];
+  separatorNavItems: NonNullable<ResponsiveBreadcrumbProps["separatorNavItems"]>;
+  clickableLeftOfEllipsis: boolean;
+  separatorNavSide: NonNullable<ResponsiveBreadcrumbProps["separatorNavSide"]>;
+  showCurrentInNav: NonNullable<ResponsiveBreadcrumbProps["showCurrentInNav"]>;
+}) {
+  const previousItem = items[node.after];
+  const nextNode = layout[nodeIndex + 1];
+  const nextIndex =
+    nextNode?.type === "item"
+      ? nextNode.index
+      : nextNode?.type === "ellipsis"
+        ? nextNode.from
+        : node.after + 1;
+  const nextItem = items[nextIndex];
+  const anchorItem = separatorNavSide === "left" ? previousItem : nextItem;
+  const leftOfEllipsis = nextNode?.type === "ellipsis";
+  const baseNavItems = getSeparatorNavItems(
+    separatorNavItems,
+    previousItem,
+    nextItem,
+    separatorNavSide,
+  );
+  const navItems = withCurrentItem({
+    navItems: baseNavItems,
+    nextItem: anchorItem,
+    showCurrentInNav,
+  });
+  const interactive =
+    navItems.length > 0 &&
+    (!leftOfEllipsis || clickableLeftOfEllipsis);
+
+  if (!interactive) {
+    return null;
+  }
+
+  return `separator-${anchorItem?.key ?? node.after}`;
+}
+
+function getSeparatorNavItems(
+  separatorNavItems: NonNullable<ResponsiveBreadcrumbProps["separatorNavItems"]>,
+  previousItem: BreadcrumbData | undefined,
+  nextItem: BreadcrumbData | undefined,
+  side: NonNullable<ResponsiveBreadcrumbProps["separatorNavSide"]>,
+) {
+  const anchorItem = side === "left" ? previousItem : nextItem;
+
+  if (!anchorItem) {
+    return [];
+  }
+
+  return (
+    separatorNavItems[anchorItem.key] ??
+    (previousItem && nextItem
+      ? separatorNavItems[`${previousItem.key}:${nextItem.key}`]
+      : undefined) ??
+    []
+  );
+}
+
+function withCurrentItem({
+  navItems,
+  nextItem,
+  showCurrentInNav,
+}: {
+  navItems: SeparatorNavItem[];
+  nextItem: BreadcrumbData | undefined;
+  showCurrentInNav: NonNullable<ResponsiveBreadcrumbProps["showCurrentInNav"]>;
+}) {
+  const shouldInclude =
+    nextItem &&
+    (showCurrentInNav === "always" ||
+      (showCurrentInNav === "with-others" && navItems.length > 0));
+
+  if (!shouldInclude) {
+    return navItems;
+  }
+
+  if (navItems.some((item) => item.key === nextItem.key)) {
+    return navItems;
+  }
+
+  return [
+    {
+      key: nextItem.key,
+      label: nextItem.label,
+      href: nextItem.href,
+      icon: nextItem.icon,
+      clickable: nextItem.clickable,
+      disabled: nextItem.disabled,
+    },
+    ...navItems,
+  ];
 }
 
 function normalizeMeasuredWidths(widths: number[], length: number) {
