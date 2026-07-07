@@ -31,6 +31,12 @@ assert.match(
 );
 
 assert.match(
+  component,
+  /mode="measure"[\s\S]*layout=\{fullMeasurementLayout\}[\s\S]*measurementScope="compact"/,
+  "compact token measurement layout is rendered by BreadcrumbRenderer",
+);
+
+assert.match(
   measurements,
   /querySelector<HTMLElement>\('\[data-measure-list="full"\]'\)/,
   "measurement gap is read from the full BreadcrumbList",
@@ -58,6 +64,18 @@ assert.match(
   renderer,
   /data-measure-title-only=\{\s*isMeasure && measurementScope === "title-only" \? "" : undefined\s*\}/,
   "title-only measurement is scoped to the title-only measurement layout",
+);
+
+assert.match(
+  renderer,
+  /data-measure-compact-token=\{\s*isMeasure && measurementScope === "compact" \? index : undefined\s*\}/,
+  "compact token measurements are scoped to the compact measurement layout",
+);
+
+assert.match(
+  measurements,
+  /const compactTokenWidths = readIndexedWidths\(\s*measureRoot,\s*"measureCompactToken",\s*\);/,
+  "compact token widths are measured from real renderer output",
 );
 
 assert.match(
@@ -89,6 +107,26 @@ assert.match(
   renderer,
   /renderMenuItem\?\.\(\{ item, mode: "menu", disabled \}\)/,
   "menu overlays use renderMenuItem when provided",
+);
+
+assert.match(types, /truncationMode\?: BreadcrumbTruncationMode;/, "truncationMode is public API");
+assert.match(types, /compactReveal\?: BreadcrumbCompactRevealOptions;/, "compactReveal is public API");
+assert.match(types, /selectedRing\?: BreadcrumbSelectedRing;/, "selectedRing is public API");
+assert.match(types, /animateLayout\?: BreadcrumbAnimation;/, "animateLayout is public API");
+assert.match(
+  renderer,
+  /function PathStartEndLabel/,
+  "path-start-end labels are rendered by the renderer",
+);
+assert.match(
+  renderer,
+  /function CompactItemContent/,
+  "compact reveal tokens are rendered by the renderer",
+);
+assert.match(
+  component,
+  /data-breadcrumb-renderer="visible"[\s\S]*data-breadcrumb-item-index/,
+  "selected overlay ring tracks visible breadcrumb items outside the clipped list",
 );
 
 console.log("responsive breadcrumb source tests passed");

@@ -396,6 +396,9 @@ export default function Home() {
     const [focusRingOverflow, setFocusRingOverflow] = useState<"collapse" | "scroll" | "wrap">("collapse");
     const [focusRingWidth, setFocusRingWidth] = useState(360);
     const focusRingFirstLinkRef = useRef<HTMLAnchorElement | null>(null);
+    const [displayModesWidth, setDisplayModesWidth] = useState(420);
+    const [compactRevealIndex, setCompactRevealIndex] = useState<number | null>(null);
+    const [selectedOverlayKey, setSelectedOverlayKey] = useState("components");
 
     // Custom breadcrumb items
     const [customBreadcrumbItems, setCustomBreadcrumbItems] = useState<Array<{ key: string; label: string; href?: string; canCollapse: boolean; canTruncate: boolean; clickable?: boolean; icon: string; customElement?: string }>>([
@@ -569,6 +572,29 @@ export default function Home() {
                 key: "breadcrumb", label: "Responsive Breadcrumb Registry Item", href: "/#breadcrumb"
             },
             { key: "focus", label: "Configurable Focus Ring" },
+        ],
+
+        pathStartEnd: [
+            {
+                key: "repo", label: "responsive-breadcrumb", href: "/#repo", icon: <Package className="h-4 w-4" />
+            },
+            {
+                key: "workspace", label: "apps/web", href: "/#workspace", icon: <Folder className="h-4 w-4" />
+            },
+            {
+                key: "test", label: "services/api-incoming/src/endpoints/proxy-webhook-events.test.ts", href: "/#test", canTruncate: true
+            },
+            { key: "case", label: "filters/market-data/live-candles/proxy-webhook-events.test.ts", canTruncate: true },
+        ],
+
+        compactReveal: [
+            { key: "workspace", label: "workspace", href: "/#workspace" },
+            { key: "projects", label: "projects", href: "/#projects" },
+            { key: "components", label: "components", href: "/#components" },
+            { key: "responsive", label: "responsive", href: "/#responsive" },
+            { key: "breadcrumb", label: "breadcrumb", href: "/#breadcrumb" },
+            { key: "renderer", label: "BreadcrumbRenderer.tsx", href: "/#renderer" },
+            { key: "current", label: "compact-reveal mode" },
         ],
     };
 
@@ -824,13 +850,14 @@ export default function Home() {
 
                 {/* Demo Tabs */}
                 < Tabs defaultValue="comprehensive" className="space-y-6">
-                    < TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+                    < TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
                         < TabsTrigger value="comprehensive" className="text-xs">Comprehensive</TabsTrigger>
                         < TabsTrigger value="strategies" className="text-xs">Strategies</TabsTrigger>
                         < TabsTrigger value="mobile" className="text-xs">Mobile/Truncation</TabsTrigger>
                         < TabsTrigger value="multi-ellipsis" className="text-xs">Multi-Ellipsis</TabsTrigger>
                         < TabsTrigger value="tree" className="text-xs">Tree Navigation</TabsTrigger>
                         < TabsTrigger value="focus-ring" className="text-xs">Focus Rings</TabsTrigger>
+                        < TabsTrigger value="display-modes" className="text-xs">Display Modes</TabsTrigger>
                         < TabsTrigger value="collapsible" className="text-xs">Collapsible Control</TabsTrigger>
                         < TabsTrigger value="debug" className="text-xs">Debug Mode</TabsTrigger>
                     </TabsList >
@@ -1860,6 +1887,166 @@ export default function Home() {
                                 </p>
                             </Card>
                         </div>
+                    </TabsContent>
+
+                    {/* Display Modes Demo */}
+                    <TabsContent value="display-modes">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Display Modes</CardTitle>
+                                <CardDescription>
+                                    New rendering modes from the production API: path-aware truncation, compact hover/focus reveal, selected overlay ring, and renderer-only layout animation.
+                                </CardDescription>
+                                <Separator className="my-4" />
+                                <div className="space-y-2">
+                                    <Label htmlFor="display-modes-width">
+                                        Demo Width: {displayModesWidth}px
+                                    </Label>
+                                    <Slider
+                                        id="display-modes-width"
+                                        min={260}
+                                        max={760}
+                                        step={20}
+                                        value={[displayModesWidth]}
+                                        onValueChange={(value) => setDisplayModesWidth(value[0])}
+                                    />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    <Card className="p-4">
+                                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                                            <h3 className="font-semibold">Path Start/End Truncation</h3>
+                                            <Badge variant="outline">truncationMode="path-start-end"</Badge>
+                                        </div>
+                                        <div
+                                            className="rounded-md border bg-background p-3"
+                                            style={{ width: `${displayModesWidth}px`, maxWidth: "100%" }}
+                                        >
+                                            <ResponsiveBreadcrumb
+                                                items={scenarios.pathStartEnd}
+                                                strategy="center"
+                                                preference="minimize-count"
+                                                showHomeIcon={false}
+                                                enableTruncation
+                                                truncationMode="path-start-end"
+                                                truncateMinWidth={120}
+                                                truncateThreshold={120}
+                                                pathTruncation={{
+                                                    preserveStartSegments: 1,
+                                                    preserveEndSegments: 2,
+                                                    minStartWidth: 40,
+                                                    minEndWidth: 96,
+                                                }}
+                                                overflowBehavior="collapse"
+                                                focusRing="inset"
+                                                animateLayout={{ truncate: true, duration: 180 }}
+                                                renderItemLink={renderDemoItemLink}
+                                                schema="none"
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-sm text-muted-foreground">
+                                            Long path labels keep useful context from the beginning and the filename-oriented end instead of only clipping the tail.
+                                        </p>
+                                    </Card>
+
+                                    <Card className="p-4">
+                                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                                            <h3 className="font-semibold">Compact Hover/Focus Reveal</h3>
+                                            <Badge variant="outline">truncationMode="compact-reveal"</Badge>
+                                            <Badge variant="secondary">token=".."</Badge>
+                                        </div>
+                                        <div
+                                            className="rounded-md border bg-background p-3"
+                                            style={{ width: `${displayModesWidth}px`, maxWidth: "100%" }}
+                                        >
+                                            <ResponsiveBreadcrumb
+                                                items={scenarios.compactReveal}
+                                                strategy="center"
+                                                preference="minimize-count"
+                                                showHomeIcon={false}
+                                                enableTruncation
+                                                truncationMode="compact-reveal"
+                                                compactReveal={{
+                                                    token: "..",
+                                                    revealOn: "both",
+                                                    controlledIndex: compactRevealIndex,
+                                                    onControlledIndexChange: setCompactRevealIndex,
+                                                    alwaysShowHead: 0,
+                                                    alwaysShowTail: 1,
+                                                }}
+                                                overflowBehavior="collapse"
+                                                focusRing="inset"
+                                                animateLayout
+                                                renderItemLink={renderDemoItemLink}
+                                                schema="none"
+                                            />
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {scenarios.compactReveal.slice(0, -1).map((item, index) => (
+                                                <Button
+                                                    key={item.key}
+                                                    variant={compactRevealIndex === index ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setCompactRevealIndex(compactRevealIndex === index ? null : index)}
+                                                >
+                                                    {item.label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </Card>
+
+                                    <Card className="p-4 lg:col-span-2">
+                                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                                            <h3 className="font-semibold">Selected Overlay Ring + Animation</h3>
+                                            <Badge variant="outline">selectedRing="overlay"</Badge>
+                                            <Badge variant="outline">animateLayout</Badge>
+                                        </div>
+                                        <div
+                                            className="rounded-md border bg-background p-3"
+                                            style={{ width: `${displayModesWidth}px`, maxWidth: "100%" }}
+                                        >
+                                            <ResponsiveBreadcrumb
+                                                items={scenarios.compactReveal}
+                                                strategy="center"
+                                                preference="minimize-count"
+                                                showHomeIcon={false}
+                                                enableTruncation
+                                                truncationMode="compact-reveal"
+                                                compactReveal={{
+                                                    token: "..",
+                                                    revealOn: "both",
+                                                    controlledIndex: compactRevealIndex,
+                                                    onControlledIndexChange: setCompactRevealIndex,
+                                                    alwaysShowHead: 0,
+                                                    alwaysShowTail: 1,
+                                                }}
+                                                selectedRing="overlay"
+                                                selectedKey={selectedOverlayKey}
+                                                selectedRingClassName="ring-emerald-500/60"
+                                                overflowBehavior="collapse"
+                                                focusRing="inset"
+                                                animateLayout={{ layout: true, presence: true, truncate: true, duration: 220 }}
+                                                renderItemLink={renderDemoItemLink}
+                                                schema="none"
+                                            />
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {scenarios.compactReveal.map((item) => (
+                                                <Button
+                                                    key={item.key}
+                                                    variant={selectedOverlayKey === item.key ? "default" : "outline"}
+                                                    size="sm"
+                                                    onClick={() => setSelectedOverlayKey(item.key)}
+                                                >
+                                                    {item.label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
 
                     {/* Collapsible Control Demo */}

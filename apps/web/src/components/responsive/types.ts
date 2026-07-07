@@ -8,6 +8,44 @@ export type CollapsePreference =
 
 export type MeasurementMode = "visible" | "measure" | "menu";
 export type BreadcrumbFocusRing = "inset" | "outer" | "clip-margin" | "none";
+export type BreadcrumbSelectedRing = "overlay" | "none";
+export type BreadcrumbTruncationMode =
+  | "width"
+  | "path-start-end"
+  | "compact-reveal";
+
+export type BreadcrumbAnimation =
+  | boolean
+  | {
+      layout?: boolean | "position" | "size";
+      presence?: boolean;
+      truncate?: boolean;
+      duration?: number;
+    };
+
+export interface BreadcrumbPathTruncationOptions {
+  separator?: string | RegExp;
+  preserveStartSegments?: number;
+  preserveEndSegments?: number;
+  minStartWidth?: number;
+  minEndWidth?: number;
+  endPriority?: number;
+}
+
+export interface BreadcrumbCompactRevealOptions {
+  token?: React.ReactNode;
+  revealOn?: "hover" | "focus" | "both";
+  controlledIndex?: number | null;
+  onControlledIndexChange?: (index: number | null) => void;
+  alwaysShowHead?: number;
+  alwaysShowTail?: number;
+}
+
+export type BreadcrumbItemDisplay =
+  | { kind: "full" }
+  | { kind: "width"; width: number }
+  | { kind: "path-start-end"; width: number }
+  | { kind: "compact"; tokenWidth: number };
 
 export interface BreadcrumbData {
   key: string;
@@ -77,6 +115,7 @@ export interface BreadcrumbMeasurements {
   ellipsisWidth: number;
   nextArrowWidth: number;
   titleOnlyWidth: number;
+  compactTokenWidths: number[];
   gap: number;
   ready: boolean;
   signature: string;
@@ -172,6 +211,9 @@ export interface ResponsiveBreadcrumbProps {
   truncateMaxWidth?: number;
   truncateThreshold?: number;
   truncateOrder?: "biggest-first" | "smallest-first";
+  truncationMode?: BreadcrumbTruncationMode;
+  pathTruncation?: BreadcrumbPathTruncationOptions;
+  compactReveal?: BreadcrumbCompactRevealOptions;
   showTooltipOnTruncate?: boolean;
   /** Enables separated collapsed groups. Prefer false unless fixed middle items require it. */
   allowMultipleEllipses?: boolean;
@@ -187,6 +229,13 @@ export interface ResponsiveBreadcrumbProps {
   overflowBehavior?: "collapse" | "scroll" | "wrap";
   /** Focus ring style for breadcrumb focusable elements. Defaults to inset in collapse mode. */
   focusRing?: BreadcrumbFocusRing;
+  /** Draws a persistent selected ring outside the clipped breadcrumb list. */
+  selectedRing?: BreadcrumbSelectedRing;
+  selectedKey?: string;
+  selectedIndex?: number;
+  selectedRingClassName?: string;
+  /** Adds renderer-only transitions without affecting the solver or measurements. */
+  animateLayout?: BreadcrumbAnimation;
   /** Forces title-only rendering at or below this measured container width. */
   fallbackAtWidth?: number;
   lastItemClickable?: boolean;

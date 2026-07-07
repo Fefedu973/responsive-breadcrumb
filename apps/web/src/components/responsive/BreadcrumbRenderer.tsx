@@ -31,8 +31,11 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type {
+  BreadcrumbAnimation,
   BreadcrumbData,
   BreadcrumbFocusRing,
+  BreadcrumbItemDisplay,
+  BreadcrumbPathTruncationOptions,
   LayoutNode,
   MeasurementMode,
   ResponsiveBreadcrumbProps,
@@ -41,6 +44,12 @@ import type {
 } from "./types";
 
 type OverlayId = string | null;
+type NormalizedAnimation = {
+  layout: boolean | "position" | "size";
+  presence: boolean;
+  truncate: boolean;
+  duration: number;
+};
 
 export interface BreadcrumbRendererProps {
   items: BreadcrumbData[];
@@ -74,12 +83,18 @@ export interface BreadcrumbRendererProps {
   overflowBehavior: "collapse" | "scroll" | "wrap";
   focusRing: BreadcrumbFocusRing;
   truncatedWidths: Record<number, number>;
+  itemDisplays: Record<number, BreadcrumbItemDisplay>;
+  pathTruncation?: BreadcrumbPathTruncationOptions;
+  compactReveal?: ResponsiveBreadcrumbProps["compactReveal"];
+  compactRevealIndex: number | null;
+  onCompactRevealIndexChange: (index: number | null) => void;
+  animateLayout: BreadcrumbAnimation;
   showTooltipOnTruncate: boolean;
   schema: "json-ld" | "microdata" | "none";
   showCurrentInNav: "never" | "with-others" | "always";
   debug: boolean;
   isRtl: boolean;
-  measurementScope?: "full" | "ellipsis" | "title-only";
+  measurementScope?: "full" | "ellipsis" | "title-only" | "compact";
 }
 
 export function BreadcrumbRenderer({
@@ -114,6 +129,12 @@ export function BreadcrumbRenderer({
   overflowBehavior,
   focusRing,
   truncatedWidths,
+  itemDisplays,
+  pathTruncation,
+  compactReveal,
+  compactRevealIndex,
+  onCompactRevealIndexChange,
+  animateLayout,
   showTooltipOnTruncate,
   schema,
   showCurrentInNav,
@@ -124,12 +145,14 @@ export function BreadcrumbRenderer({
   const isMeasure = mode === "measure";
   const titleOnlyNode = layout.find((node) => node.type === "title-only");
   const focusRingClass = getFocusRingClass(focusRing);
+  const animation = normalizeAnimation(animateLayout);
 
   if (titleOnlyNode) {
     return (
       <Breadcrumb
         className={cn("min-w-0 max-w-full", className)}
         dir={isRtl ? "rtl" : "ltr"}
+        data-breadcrumb-renderer={mode}
       >
         <BreadcrumbList
           className={cn(
@@ -165,6 +188,7 @@ export function BreadcrumbRenderer({
     <Breadcrumb
       className={cn("min-w-0 max-w-full", className)}
       dir={isRtl ? "rtl" : "ltr"}
+      data-breadcrumb-renderer={mode}
     >
       <BreadcrumbList
         className={cn(
@@ -212,6 +236,12 @@ export function BreadcrumbRenderer({
                 onItemClick={onItemClick}
                 debug={debug}
                 truncatedWidth={truncatedWidths[node.index]}
+                display={itemDisplays[node.index] ?? { kind: "full" }}
+                pathTruncation={pathTruncation}
+                compactReveal={compactReveal}
+                compactRevealIndex={compactRevealIndex}
+                onCompactRevealIndexChange={onCompactRevealIndexChange}
+                animation={animation}
                 showTooltipOnTruncate={showTooltipOnTruncate}
                 schema={schema}
                 strings={strings}
@@ -245,6 +275,7 @@ export function BreadcrumbRenderer({
                 showCurrentInNav={showCurrentInNav}
                 debug={debug}
                 focusRingClass={focusRingClass}
+                animation={animation}
               />
             );
           }
@@ -270,6 +301,7 @@ export function BreadcrumbRenderer({
                 strings={strings}
                 debug={debug}
                 focusRingClass={focusRingClass}
+                animation={animation}
               />
             );
           }
@@ -291,6 +323,7 @@ export function BreadcrumbRenderer({
                 strings={strings}
                 debug={debug}
                 focusRingClass={focusRingClass}
+                animation={animation}
               />
             );
           }
@@ -314,6 +347,111 @@ function getFocusRingClass(focusRing: BreadcrumbFocusRing) {
   return "outline-none transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 }
 
+function normalizeAnimation(animation: BreadcrumbAnimation): NormalizedAnimation {
+  if (animation === true) {
+    return {
+      layout: true,
+      presence: true,
+      truncate: true,
+      duration: 150,
+    };
+  }
+
+  if (!animation) {
+    return {
+      layout: false,
+      presence: false,
+      truncate: false,
+      duration: 0,
+    };
+  }
+
+  return {
+    layout: animation.layout ?? true,
+    presence: animation.presence ?? true,
+    truncate: animation.truncate ?? true,
+    duration: animation.duration ?? 150,
+  };
+}
+
+function getAnimationClass(animation: NormalizedAnimation, kind: "item" | "presence") {
+  if (
+    (kind === "item" && !animation.layout && !animation.truncate) ||
+    (kind === "presence" && !animation.presence)
+  ) {
+    return "";
+  }
+
+  return kind === "item"
+    ? "transition-[max-width,width,opacity,transform] ease-out motion-reduce:transition-none"
+    : "transition-[opacity,transform] ease-out motion-reduce:transition-none";
+}
+
+function getAnimationStyle(animation: NormalizedAnimation) {
+  return animation.duration > 0
+    ? ({ transitionDuration: `${animation.duration}ms` } satisfies React.CSSProperties)
+    : undefined;
+}
+
+function mergeStyles(
+  ...styles: Array<React.CSSProperties | undefined>
+): React.CSSProperties | undefined {
+  const merged = Object.assign({}, ...styles.filter(Boolean));
+  return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
+function getDisplayWidth(display: BreadcrumbItemDisplay) {
+  if (display.kind === "width" || display.kind === "path-start-end") {
+    return display.width;
+  }
+
+  if (display.kind === "compact") {
+    return display.tokenWidth;
+  }
+
+  return undefined;
+}
+
+function getCompactRevealProps({
+  index,
+  enabled,
+  revealOn,
+  currentIndex,
+  onChange,
+}: {
+  index: number;
+  enabled: boolean;
+  revealOn: NonNullable<
+    NonNullable<ResponsiveBreadcrumbProps["compactReveal"]>["revealOn"]
+  >;
+  currentIndex: number | null;
+  onChange: (index: number | null) => void;
+}) {
+  if (!enabled) {
+    return {};
+  }
+
+  const clear = () => {
+    if (currentIndex === index) {
+      onChange(null);
+    }
+  };
+
+  return {
+    onMouseEnter:
+      revealOn === "hover" || revealOn === "both"
+        ? () => onChange(index)
+        : undefined,
+    onMouseLeave:
+      revealOn === "hover" || revealOn === "both" ? clear : undefined,
+    onFocus:
+      revealOn === "focus" || revealOn === "both"
+        ? () => onChange(index)
+        : undefined,
+    onBlur: revealOn === "focus" || revealOn === "both" ? clear : undefined,
+  };
+}
+
 function RenderedItem({
   item,
   index,
@@ -328,6 +466,12 @@ function RenderedItem({
   onItemClick,
   debug,
   truncatedWidth,
+  display,
+  pathTruncation,
+  compactReveal,
+  compactRevealIndex,
+  onCompactRevealIndexChange,
+  animation,
   showTooltipOnTruncate,
   schema,
   strings,
@@ -346,30 +490,68 @@ function RenderedItem({
   onItemClick?: ResponsiveBreadcrumbProps["onItemClick"];
   debug: boolean;
   truncatedWidth?: number;
+  display: BreadcrumbItemDisplay;
+  pathTruncation?: BreadcrumbPathTruncationOptions;
+  compactReveal?: ResponsiveBreadcrumbProps["compactReveal"];
+  compactRevealIndex: number | null;
+  onCompactRevealIndexChange: (index: number | null) => void;
+  animation: NormalizedAnimation;
   showTooltipOnTruncate: boolean;
   schema: "json-ld" | "microdata" | "none";
   strings: ResponsiveBreadcrumbStrings;
   focusRingClass: string;
 }) {
   const interactive = isInteractiveItem(item, current, lastItemClickable);
-  const content = renderItem?.({ item, index, mode, current }) ?? (
-    <ItemContent
-      item={item}
-      showHomeIcon={showHomeIcon && index === 0}
-      mode={mode}
+  const isCompact = display.kind === "compact";
+  const readableItemLabel = readableLabel(
+    item.label,
+    resolveLabel(strings.itemLabelFallback),
+  );
+  const content = isCompact ? (
+    <CompactItemContent
+      token={compactReveal?.token ?? ".."}
+      accessibleLabel={readableItemLabel}
     />
+  ) : (
+    renderItem?.({ item, index, mode, current }) ?? (
+      <ItemContent
+        item={item}
+        showHomeIcon={showHomeIcon && index === 0}
+        mode={mode}
+        display={display}
+        pathTruncation={pathTruncation}
+      />
+    )
   );
   const contentWithSchema =
     schema === "microdata" ? <span itemProp="name">{content}</span> : content;
-  const itemStyle = truncatedWidth
-    ? ({ maxWidth: `${truncatedWidth}px` } satisfies React.CSSProperties)
-    : undefined;
+  const displayWidth = getDisplayWidth(display) ?? truncatedWidth;
+  const itemStyle = mergeStyles(
+    displayWidth ? { maxWidth: `${displayWidth}px` } : undefined,
+    getAnimationStyle(animation),
+  );
+  const revealProps = getCompactRevealProps({
+    index,
+    enabled: Boolean(compactReveal),
+    revealOn: compactReveal?.revealOn ?? "both",
+    currentIndex: compactRevealIndex,
+    onChange: onCompactRevealIndexChange,
+  });
   const itemClassName = cn(
     "inline-flex min-w-0 max-w-full shrink-0 items-center gap-1.5 truncate rounded-md transition-all",
     focusRingClass,
+    getAnimationClass(animation, "item"),
   );
   const itemElement = interactive && item.href ? (
-    <BreadcrumbLink asChild className={itemClassName} style={itemStyle}>
+    <BreadcrumbLink
+      asChild
+      className={itemClassName}
+      style={itemStyle}
+      aria-label={isCompact ? readableItemLabel : undefined}
+      data-breadcrumb-item-index={index}
+      data-breadcrumb-item-key={item.key}
+      {...revealProps}
+    >
       {renderItemLink?.({
         item,
         index,
@@ -400,12 +582,23 @@ function RenderedItem({
       )}
       style={itemStyle}
       disabled={item.disabled}
+      aria-label={isCompact ? readableItemLabel : undefined}
+      data-breadcrumb-item-index={index}
+      data-breadcrumb-item-key={item.key}
       onClick={() => onItemClick?.(item)}
+      {...revealProps}
     >
       {contentWithSchema}
     </button>
   ) : (
-    <BreadcrumbPage className={itemClassName} style={itemStyle}>
+    <BreadcrumbPage
+      className={itemClassName}
+      style={itemStyle}
+      aria-label={isCompact ? readableItemLabel : undefined}
+      data-breadcrumb-item-index={index}
+      data-breadcrumb-item-key={item.key}
+      {...revealProps}
+    >
       {contentWithSchema}
     </BreadcrumbPage>
   );
@@ -429,6 +622,9 @@ function RenderedItem({
       data-measure-item={
         isMeasure && measurementScope === "full" ? index : undefined
       }
+      data-measure-compact-token={
+        isMeasure && measurementScope === "compact" ? index : undefined
+      }
       itemProp={schema === "microdata" ? "itemListElement" : undefined}
       itemScope={schema === "microdata" ? true : undefined}
       itemType={
@@ -451,10 +647,14 @@ function ItemContent({
   item,
   showHomeIcon,
   mode,
+  display,
+  pathTruncation,
 }: {
   item: BreadcrumbData;
   showHomeIcon: boolean;
   mode: MeasurementMode;
+  display: BreadcrumbItemDisplay;
+  pathTruncation?: BreadcrumbPathTruncationOptions;
 }) {
   if (mode === "measure" && item.measureElement) {
     return <>{item.measureElement}</>;
@@ -468,9 +668,79 @@ function ItemContent({
     <>
       {showHomeIcon ? <Home className="size-4 shrink-0" aria-hidden /> : null}
       {item.icon}
-      <span className="min-w-0 truncate">{item.label}</span>
+      {display.kind === "path-start-end" &&
+      (typeof item.label === "string" || typeof item.label === "number") ? (
+        <PathStartEndLabel
+          label={String(item.label)}
+          options={pathTruncation}
+        />
+      ) : (
+        <span className="min-w-0 truncate">{item.label}</span>
+      )}
       {mode === "measure" ? null : null}
     </>
+  );
+}
+
+function CompactItemContent({
+  token,
+  accessibleLabel,
+}: {
+  token: React.ReactNode;
+  accessibleLabel: string;
+}) {
+  return (
+    <span className="inline-flex min-w-0 items-center">
+      <span aria-hidden="true">{token}</span>
+      <span className="sr-only">{accessibleLabel}</span>
+    </span>
+  );
+}
+
+function PathStartEndLabel({
+  label,
+  options,
+}: {
+  label: string;
+  options?: BreadcrumbPathTruncationOptions;
+}) {
+  const separator = options?.separator ?? "/";
+  const separatorText = typeof separator === "string" ? separator : "/";
+  const parts =
+    typeof separator === "string" ? label.split(separator) : label.split(separator);
+
+  if (parts.length < 2) {
+    return <span className="min-w-0 truncate">{label}</span>;
+  }
+
+  const startCount = Math.max(1, options?.preserveStartSegments ?? 1);
+  const endCount = Math.max(1, options?.preserveEndSegments ?? 1);
+  const start = parts.slice(0, startCount).join(separatorText);
+  const end = parts.slice(Math.max(startCount, parts.length - endCount)).join(
+    separatorText,
+  );
+  const startMinWidth = options?.minStartWidth ?? 24;
+  const endMinWidth = options?.minEndWidth ?? 48;
+  const endPriority = Math.max(1, options?.endPriority ?? 2);
+
+  return (
+    <span className="inline-flex min-w-0 max-w-full items-center">
+      <span
+        className="min-w-0 truncate text-muted-foreground"
+        style={{ flex: `1 2 ${startMinWidth}px` }}
+      >
+        {start}
+      </span>
+      <span className="px-1 text-muted-foreground" aria-hidden="true">
+        {separatorText}
+      </span>
+      <span
+        className="min-w-0 truncate font-medium"
+        style={{ flex: `${endPriority} 1 ${endMinWidth}px` }}
+      >
+        {end}
+      </span>
+    </span>
   );
 }
 
@@ -496,6 +766,7 @@ function RenderedSeparator({
   showCurrentInNav,
   debug,
   focusRingClass,
+  animation,
 }: {
   node: Extract<LayoutNode, { type: "separator" }>;
   layout: LayoutNode[];
@@ -518,6 +789,7 @@ function RenderedSeparator({
   showCurrentInNav: "never" | "with-others" | "always";
   debug: boolean;
   focusRingClass: string;
+  animation: NormalizedAnimation;
 }) {
   const previousItem = items[node.after];
   const nextNode = layout[nodeIndex + 1];
@@ -581,7 +853,12 @@ function RenderedSeparator({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className={cn("group size-7 text-muted-foreground", focusRingClass)}
+            className={cn(
+              "group size-7 text-muted-foreground",
+              focusRingClass,
+              getAnimationClass(animation, "presence"),
+            )}
+            style={getAnimationStyle(animation)}
             tabIndex={isMeasure ? -1 : undefined}
             aria-label={label}
           >
@@ -625,6 +902,7 @@ function RenderedEllipsis({
   strings,
   debug,
   focusRingClass,
+  animation,
 }: {
   node: Extract<LayoutNode, { type: "ellipsis" }>;
   items: BreadcrumbData[];
@@ -643,6 +921,7 @@ function RenderedEllipsis({
   strings: ResponsiveBreadcrumbStrings;
   debug: boolean;
   focusRingClass: string;
+  animation: NormalizedAnimation;
 }) {
   const hiddenItems = items.slice(node.from, node.to + 1);
   const overlayId = `ellipsis-${node.from}-${node.to}`;
@@ -670,7 +949,12 @@ function RenderedEllipsis({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className={cn("size-8 px-0", focusRingClass)}
+            className={cn(
+              "size-8 px-0",
+              focusRingClass,
+              getAnimationClass(animation, "presence"),
+            )}
+            style={getAnimationStyle(animation)}
             aria-label={label}
             tabIndex={isMeasure ? -1 : undefined}
           >
@@ -707,6 +991,7 @@ function RenderedNext({
   strings,
   debug,
   focusRingClass,
+  animation,
 }: {
   nextItems: SeparatorNavItem[];
   mode: MeasurementMode;
@@ -721,6 +1006,7 @@ function RenderedNext({
   strings: ResponsiveBreadcrumbStrings;
   debug: boolean;
   focusRingClass: string;
+  animation: NormalizedAnimation;
 }) {
   const overlayId = "next";
 
@@ -744,7 +1030,9 @@ function RenderedNext({
             className={cn(
               "group size-8 px-0 text-muted-foreground",
               focusRingClass,
+              getAnimationClass(animation, "presence"),
             )}
+            style={getAnimationStyle(animation)}
             aria-label={resolveLabel(strings.nextItems)}
             disabled={nextItems.length === 0}
             tabIndex={isMeasure ? -1 : undefined}
