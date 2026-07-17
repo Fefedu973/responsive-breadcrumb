@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
-import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Card,
   CardAction,
@@ -141,14 +140,10 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function ChartAreaInteractive() {
-  const isMobile = useIsMobile()
+  // Video rendering: the range is frozen to 90d. The original isMobile effect
+  // could flip it to 7d depending on when a render chunk mounted, redrawing
+  // the chart mid-scene.
   const [timeRange, setTimeRange] = React.useState("90d")
-
-  React.useEffect(() => {
-    if (isMobile) {
-      setTimeRange("7d")
-    }
-  }, [isMobile])
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)

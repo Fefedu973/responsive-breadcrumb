@@ -135,6 +135,19 @@
   }
 }
 
+/*
+ * Remotion renders frames on its own clock: wall-clock CSS animations and
+ * transitions (Radix data-state animations, tw-animate-css, hover fades…)
+ * would be captured mid-flight and differ between frames. All motion in this
+ * video is driven by useCurrentFrame(), so kill every CSS animation.
+ */
+*,
+*::before,
+*::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 .video-breadcrumb {
   width: 100%;
   min-width: 0;
@@ -152,41 +165,124 @@
 
 .video-breadcrumb [data-slot="breadcrumb-item"] svg,
 .video-breadcrumb [data-slot="breadcrumb-separator"] svg {
+  flex: 0 0 auto !important;
   width: 0.9em !important;
+  min-width: 0.9em !important;
   height: 0.9em !important;
+  min-height: 0.9em !important;
 }
 
-.video-breadcrumb [data-slot="button"] {
-  width: 1.55em !important;
-  min-width: 1.55em !important;
-  height: 1.55em !important;
-  padding: 0 !important;
-  border-radius: 0.38em !important;
+.video-breadcrumb button[aria-label*="collapsed breadcrumb"] {
+  width: auto !important;
+  min-width: 2em !important;
+  height: 1.7em !important;
+  padding: 0 0.4em !important;
+  gap: 0.2em !important;
+  border-radius: 0.45em !important;
   font-size: inherit !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
 }
 
-.video-breadcrumb [data-slot="badge"] {
-  height: 0.82em !important;
-  min-width: 0.82em !important;
-  padding-inline: 0.22em !important;
-  font-size: 0.46em !important;
+.video-breadcrumb button[aria-label*="collapsed breadcrumb"][data-state="open"] {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: transparent !important;
+}
+
+.video-breadcrumb button[aria-label*="collapsed breadcrumb"] svg {
+  width: 1em !important;
+  height: 1em !important;
+}
+
+/* Deliberately separate the demo close-up from the compact dashboard use. */
+.video-breadcrumb--menu button[aria-label*="collapsed breadcrumb"] {
+  width: calc(var(--video-breadcrumb-size) * 2.05) !important;
+  min-width: calc(var(--video-breadcrumb-size) * 2.05) !important;
+  height: calc(var(--video-breadcrumb-size) * 2.05) !important;
+  padding: 0 !important;
+  border-radius: 16px !important;
+  color: #d4d4d8 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.video-breadcrumb--menu,
+.video-breadcrumb--menu [data-slot="breadcrumb-list"] {
+  overflow: visible !important;
+}
+
+.video-breadcrumb--menu button[aria-label*="collapsed breadcrumb"] svg {
+  width: calc(var(--video-breadcrumb-size) * 1.1) !important;
+  height: calc(var(--video-breadcrumb-size) * 1.1) !important;
+  stroke-width: 2.4 !important;
+  color: currentColor !important;
+}
+
+.video-breadcrumb--resize button[aria-label*="collapsed breadcrumb"] {
+  width: calc(var(--video-breadcrumb-size) * 2.15) !important;
+  min-width: calc(var(--video-breadcrumb-size) * 2.15) !important;
+  height: calc(var(--video-breadcrumb-size) * 2.15) !important;
+  padding: 0 !important;
+  border-radius: 14px !important;
+  color: #d4d4d8 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.video-breadcrumb--resize button[aria-label*="collapsed breadcrumb"] svg {
+  width: calc(var(--video-breadcrumb-size) * 1.12) !important;
+  height: calc(var(--video-breadcrumb-size) * 1.12) !important;
+  stroke-width: 2.3 !important;
+  color: currentColor !important;
+}
+
+.video-breadcrumb--dashboard button[aria-label*="collapsed breadcrumb"] {
+  width: calc(var(--video-breadcrumb-size) * 2) !important;
+  min-width: calc(var(--video-breadcrumb-size) * 2) !important;
+  height: calc(var(--video-breadcrumb-size) * 2) !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  color: #71717a !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.video-breadcrumb--dashboard button[aria-label*="collapsed breadcrumb"] svg {
+  width: calc(var(--video-breadcrumb-size) * 1.05) !important;
+  height: calc(var(--video-breadcrumb-size) * 1.05) !important;
+  stroke-width: 2.2 !important;
+  color: currentColor !important;
 }
 
 [data-slot="popover-content"] {
-  width: 390px !important;
+  width: auto !important;
+  min-width: 480px !important;
   padding: 10px !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  background: rgba(24, 24, 27, 0.98) !important;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.58) !important;
+  border-radius: 18px !important;
+  border-color: rgba(255, 255, 255, 0.13) !important;
+  background: rgba(22, 22, 25, 0.99) !important;
+  box-shadow: 0 40px 110px rgba(0, 0, 0, 0.62) !important;
 }
 
 [data-slot="popover-content"] [data-slot="button"] {
-  min-height: 46px !important;
-  padding-inline: 14px !important;
-  font-size: 20px !important;
+  min-height: 66px !important;
+  padding-inline: 18px !important;
+  gap: 16px !important;
+  border-radius: 12px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  font-size: 25px !important;
+  justify-content: flex-start !important;
 }
 
 [data-slot="popover-content"] [data-slot="button"] svg {
-  width: 20px !important;
-  height: 20px !important;
+  width: 30px !important;
+  height: 30px !important;
+  stroke-width: 2.25 !important;
+  color: #fafafa !important;
+}
+
+[data-slot="popover-content"] [data-slot="button"]:has([data-video-menu-row-active="true"]) {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fafafa !important;
 }

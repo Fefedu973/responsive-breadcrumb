@@ -6,7 +6,7 @@ export const MyComposition = () => {
     <Composition
       id="ResponsiveBreadcrumbLaunch"
       component={LaunchVideo}
-      durationInFrames={360}
+      durationInFrames={870}
       fps={30}
       width={1920}
       height={1080}

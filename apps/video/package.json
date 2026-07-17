@@ -46,8 +46,9 @@
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
-    "render": "remotion render ResponsiveBreadcrumbLaunch out/responsive-breadcrumb-twitter.mp4 --codec=h264 --crf=18 --concurrency=1",
-    "cover": "remotion still ResponsiveBreadcrumbLaunch out/responsive-breadcrumb-cover.png --frame=340"
+    "music": "node scripts/make-music.mjs",
+    "render": "remotion render ResponsiveBreadcrumbLaunch out/responsive-breadcrumb-twitter.mp4 --codec=h264 --crf=18",
+    "cover": "remotion still ResponsiveBreadcrumbLaunch out/responsive-breadcrumb-cover.png --frame=84"
   },
   "sideEffects": [
     "*.css"
