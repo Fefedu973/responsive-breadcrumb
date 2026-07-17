@@ -6,7 +6,7 @@ The component measures its real rendered DOM in a hidden tree, solves the best l
 
 ## Demo
 
-https://github.com/user-attachments/assets/a1aa3f70-6ea0-4588-bd5d-cd86c62c46ce
+https://github.com/user-attachments/assets/7b48c2ad-be58-41a5-94f5-200d5ab4242e
 
 Live demo (GitHub Pages, deployed from `apps/web`):
 
