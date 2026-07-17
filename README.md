@@ -127,8 +127,6 @@ apps/web/tests/
 registry.json                         # shadcn registry definition
 ```
 
-The demo app uses shadcn/ui components generated with the `b0` preset (nova style, neutral palette). Local experiments and old implementations live in `docs/experiments` and are not published.
-
 ## Development
 
 ```bash
@@ -144,7 +142,3 @@ bun run registry:validate
 bun run registry:build
 bun run --cwd apps/web build
 ```
-
-## Deployment
-
-The workflow at `.github/workflows/deploy-pages.yml` runs on pushes to `main`. It installs dependencies with Bun, runs the tests and TypeScript, builds the shadcn registry JSON into `apps/web/public/r`, builds the Next.js demo as a static export, and publishes `apps/web/out` to GitHub Pages.
