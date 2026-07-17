@@ -57,14 +57,14 @@
           "target": "@hooks/use-media-query.tsx"
         }
       ],
-      "docs": "Import with `import { ResponsiveBreadcrumb } from \"@/components/ui/responsive-breadcrumb\"`. Install from GitHub with `shadcn add Fefedu973/responsive-breadcrumb/responsive-breadcrumb`, or register the Pages namespace with `shadcn registry add @responsive-breadcrumb=https://fefedu973.github.io/responsive-breadcrumb/r/{name}.json` then run `shadcn add @responsive-breadcrumb/responsive-breadcrumb`.",
+      "docs": "Import with `import { ResponsiveBreadcrumb } from \"@/components/ui/responsive-breadcrumb\"`. Install from GitHub with `shadcn add Fefedu973/responsive-breadcrumb/responsive-breadcrumb`, or register the Pages namespace with `shadcn registry add @responsive-breadcrumb=https://fefedu973.github.io/Responsive-Breadcrumb/r/{name}.json` then run `shadcn add @responsive-breadcrumb/responsive-breadcrumb`.",
       "categories": [
         "breadcrumb",
         "navigation",
         "responsive"
       ],
       "meta": {
-        "demo": "https://fefedu973.github.io/responsive-breadcrumb/",
+        "demo": "https://fefedu973.github.io/Responsive-Breadcrumb/",
         "source": "https://github.com/Fefedu973/responsive-breadcrumb"
       }
     }

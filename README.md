@@ -8,7 +8,7 @@ The component measures its real rendered DOM in a hidden tree, solves the best l
 
 Live demo (GitHub Pages, deployed from `apps/web`):
 
-**<https://fefedu973.github.io/responsive-breadcrumb/>**
+**<https://fefedu973.github.io/Responsive-Breadcrumb/>**
 
 The demo page includes:
 
@@ -28,7 +28,7 @@ bunx shadcn@latest add Fefedu973/responsive-breadcrumb/responsive-breadcrumb
 Or register the GitHub Pages namespace once, then add by name:
 
 ```bash
-bunx shadcn@latest registry add @responsive-breadcrumb=https://fefedu973.github.io/responsive-breadcrumb/r/{name}.json
+bunx shadcn@latest registry add @responsive-breadcrumb=https://fefedu973.github.io/Responsive-Breadcrumb/r/{name}.json
 bunx shadcn@latest add @responsive-breadcrumb/responsive-breadcrumb
 ```
 
